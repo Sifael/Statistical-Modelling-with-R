@@ -1,0 +1,433 @@
+---
+title: "Week 6 - Decision Regression and Classification"
+format: html
+editor: visual
+---
+
+## Classification and Regression Trees (CART) - Decision Trees
+
+This week's tutorial will cover CART techniques, also known as Classification and Regression Trees. At the core of these models is the Decision Trees Algorithm/Technique. In our discussion today, we will cover the foundations of Decision Trees, discuss the concepts of Impurity (also referred to as Entropy or Chaos), discuss the main questions surrounding decision tree node selection and implement algorithms to generate a decision Tree. More specifically, we will cover the following concepts:
+
+1.  **Decision Trees**\
+    We will begin by introducing decision trees as a fundamental machine learning model used for both classification and regression tasks. We'll explore how they represent decisions visually, allowing for easy interpretation and understanding.
+
+2.  **Entropy and Impurity Concepts**\
+    Next, we'll delve into the concepts of entropy and impurity, which are critical for understanding how decision trees split data. We will define entropy as a measure of disorder or uncertainty in the dataset and discuss how this concept is used to assess the quality of a split.
+
+3.  **Node Selection**\
+    In this section, we will focus on the criteria used for selecting nodes when constructing a decision tree. We will discuss various algorithms that determine the best splits based on measures of impurity. You'll learn about common strategies such as the Information Gain, Gain Ratio, and Gini Index, and how these methods influence the depth and complexity of the resulting tree.
+
+4.  **Implementation with R**
+
+    Finally, we implement the classification and Regression algorithms using R's tidy models.
+
+## Decision Trees
+
+Tree-based models are a type of machine learning technique that uses a tree- like structures to make predictions. The most basic type of a tree-based model is a Decision Tree. A Decision Tree guides observation through a tree-like structure with many branches. Below is an example of a simple tree model, that predicts the type of Vehicle based on some set of features.
+
+#### Sample Decision Tree
+
+![](images/Screenshot%202024-10-21%20at%2010.12.01.png){width="546"}
+
+#### Figure is taken from Machine Learning with R, Tidyverse and MLR -Textbook
+
+#### Some important terminology here:
+
+1.  **Root Node**: The root node is the parent node that determine the partition of the rest of the tree. It contains all data prior to splitting
+2.  **Decision Nodes**: The decision nodes are subsequent nodes that further split the data into either decision nodes or leaf nodes
+3.  **Leaf Nodes**: Leaf nodes are the end point of the tree, they house the class/label of the observations
+
+Instinctively, we may wish to ask, given the knowledge of the nature of a decision tree, how it is that the algorithm we choose to use will decide how the tree is formed. In particular, there are three questions to consider:
+
+1.  What variable makes the best root node?
+2.  Which variables make the best decision nodes?
+3.  In what order should these decision nodes be?
+
+## Entropy and Theory of Information
+
+Entropy is a concept commonly linked to physics and mathematics that concerns with the measure of chaos in a system. To reduce it to our use in data analytics and machine learning, entropy is a technique that attempts to measure impurity present within a particular data set. In order words, we can use it to measure how homogeneous our data set is. This is useful because as we seek to classify objects, we wish to reduce impurity, or phrased differently, maximize homogeneity.
+
+Formally, Entropy of a variable can be calculated using the following formula:
+
+$$ (Shannon's)Entropy = H(Y, X) = - \sum_{i=1}^{m} p_i * log_2(p_i) $$
+
+where
+
+$Y$: categorical dependent variable, $X_k$: Set of predictor variables with $k$ distinct values. $p$ is the probability of a certain category $m$ in $Y$.
+
+### Entropy Example for the Binary Case
+
+Let's look at an example of the Binary case, where the labels belong to two classes only. The code below will evaluate the entropy against different composition of the labels. For simplicity, let's say, if there are labels $A$ and $B$, we will generate different proportions for A and B will equal to $1-p(A)$.
+
+The general formula for Entropy for Binary case is then:
+
+$$
+Entropy = - p(A) * log_2(P(A)) - (1 - P(A)) * log2(1 - p(A)) = -plog_2(p) - (1 - p)log_2(1 - p)
+$$
+
+```{r}
+# NOTE HERE: .Machine$double.eps  is a very small number
+
+# Define the entropy function for a binary system
+entropy_binary <- function(p, base = 2) {
+  # Ensure probabilities are within (0,1) to avoid log(0)
+  p <- ifelse(p == 0, .Machine$double.eps, ifelse(p == 1, 1 - .Machine$double.eps, p))
+  q <- 1 - p
+  # Compute the entropy
+  H <- - (p * log(p, base = base) + q * log(q, base = base))
+  return(H)
+}
+
+# Create a sequence of probability values from 0 to 1
+p_values <- seq(0, 1, length.out = 1000)
+
+# Calculate entropy for each probability
+H_values <- entropy_binary(p_values)
+
+# Plot the entropy as a function of probability
+plot(p_values, H_values, type = 'l', lwd = 2, col = 'blue',
+     xlab = 'Probability (p)',
+     ylab = 'Entropy H(p) [bits]',
+     main = 'Entropy of a Binary System')
+
+# Add grid lines for better visualization
+grid()
+
+
+
+```
+
+Think through the interpretation of the Curve above. Specifically, Entropy of a system when the probabilities of $A$ and $B$ are at .5. That is, at the highest randomness, the entropy is high. As the probability of an individual label becomes higher than the other, the entropy reduces.
+
+## 
+
+## How to Pick Nodes - Expected Entropy and Information Gain
+
+The entropy calculation gives us everything we need to be able to select nodes for splits. Naturally, with a few modifications, we can apply entropy to develop a more useful measure that tells us exactly how much impurity we would reduce by selecting a specific node. To do this we need two more modified versions of entropy:
+
+## 1.1. Expected Entropy
+
+The first idea is the expected Entropy. The Expected Entropy provides an estimated entropy value when a particular variable is selected. It does this by computing the Expected Entropy of the child nodes given the probabilities of their categories. Mathematically, the formula is:
+
+Suppose an Attribute $A$ with $k$ distinct values is selected as a node, to get the expected entropy, we compute the following:
+
+$$
+EH(A) = \sum_{i=1}^{k} \frac {p_i + n_i} {p + n} H(\frac {p_i}{p_i + n_i}, \frac{n_i}{p_i + n_i} )
+$$
+
+Let us use an example to demonstrate the computation above:
+
+Suppose we have 12 observations equally distributed of a label as to whether an individual will play a game based on weather (and other factors). On this example, we will use the weather as a node to compute the EH value.
+
+![](images/Screenshot%202024-10-21%20at%2022.16.55.png){width="484"}
+
+$$
+EH(Weather) = p_{rainy} * H(p_{rainy, play}, p_{rainy,not\ play}) + p_{sunny} * H(p_{sunny,play}, p_{sunny,not\ play}) + p_{cloudy} * H(p_{cloudy,play}, p_{cloudy,not\ play})
+$$
+
+To implement it directly, the EH(Weather) is given by:
+
+$$
+EH(Weather) = \frac {2}{12} * H(0, 1) + \frac {4}{12} * H(1, 0) + \frac {6}{12} * H(2/6, 4/6) = .4589
+$$
+
+## Information Gain
+
+In the above example, we have calculated Expected Entropy at a given column variable. In reality we will have to compute these for all variables. However this is till not sufficient, the final piece is to get the information gain which is the difference between entropy of the complete data set and the entropy at the variable.
+
+$$IG = H(Y,X) - EH(A)$$
+
+For our example above, this will correspond to:
+
+$$ IG(weather) = 1 - EH(Weather) = 1 - .4589 = .541 $$
+
+So by choosing the Weather variable, we have reduced the chaos, or gained information from 1 to .541. Typically we do this across all the variables and do it recursively until we have the tree.
+
+## Implementing Decision Trees with R
+
+For this lab, we will use the `CarSeats` dataset which is part of the ISLR tidymodel lab books. The data is relatively less sophisticated to allow us to focus on the coding aspects of the lab.
+
+```{r}
+# loading the necessary libraries
+# keep in mind that some libraries need installing
+library(ISLR)         
+library(ggthemr)
+library(ggplot2)
+library(tidyverse)
+library(tidymodels)
+library(rpart.plot)
+
+
+# setting theme
+ggthemr('pale')
+```
+
+```{r}
+# reading the dataset into the variable
+data("Carseats")
+
+# show the sample of the dataset
+car_seat_sales <- as_tibble(Carseats)
+head(car_seat_sales)
+```
+
+```{r}
+names(car_seat_sales)
+```
+
+```{r}
+# looking at the features of the ames dataset
+dim(car_seat_sales)
+```
+
+## Fitting a Classification Decision Tree
+
+We begin by classifying the dataset using Sales as our dependent variables and other variables as predictors. As we have seen above, the sales data is in fact a numerical value. Therefore, we need to convert is to a factor variable.
+
+```{r}
+# create a new column and remove the older sales
+car_seat_sales <- car_seat_sales %>% 
+                  mutate( High = factor( if_else(Sales > 8, 'Yes', 'No'))) %>% 
+                  select(-Sales)
+```
+
+Now, we can generate our train and test sets.
+
+```{r}
+# setting seed for reproducibility
+set.seed(3261)
+
+data_split <- initial_split(car_seat_sales, prop = .8, strata = High)
+train_data <- training(data_split)
+test_data <- testing(data_split)
+
+dim(train_data); dim(test_data);
+```
+
+### Decision Tree Model Setup
+
+As we have seen a few times now with `tidymodels`, we will need to configure our model by setting up the engine and task definition to suit our specific needs.
+
+```{r}
+# defining the model specification
+decision_tree_classifier <- decision_tree( tree_depth = 6 ) %>%
+                            set_engine('rpart') %>%
+                            set_mode('classification')
+      
+
+# fitting the model
+decision_tree_fit <- decision_tree_classifier %>% fit(High ~., data = train_data)
+
+decision_tree_fit
+```
+
+### Visualizing the Tree
+
+To visualize the decision tree notes, we need to extract the model fit from the engine and pass it to our `rpart.plot` which will render the tree. The visualization allows us to see the feature importance.
+
+```{r}
+ extract_fit_engine(decision_tree_fit) %>%
+    rpart.plot(roundint=FALSE)
+```
+
+We see that the most important node for the sales is the Shelving location. In particular, let us note that the node differentiates between `Good` vs. `Medium` and `Bad` locations. It is also interesting to note that the price comes second to location.
+
+## Model Accuracy and Fit Assessment
+
+Like with every other classification model, we can compute the accuracy and confusion matrix to further investigate the model performance. We do this with both the test and train sets.
+
+```{r}
+# train dataset accuracy
+augment( decision_tree_fit, new_data = train_data ) %>%
+    accuracy(truth = High, estimate = .pred_class)
+```
+
+```{r}
+# Train Confusion Matrix
+augment( decision_tree_fit, new_data = train_data ) %>%
+    conf_mat(truth = High, estimate = .pred_class)
+```
+
+The training set accuracy is at 85%. Without any optimization parameters, this is a relatively good accuracy level.
+
+```{r}
+# test dataset accuracy
+augment( decision_tree_fit, new_data = test_data ) %>%
+    accuracy(truth = High, estimate = .pred_class)
+```
+
+The test set accuracy is at \~76%, nearly \~10 percentage points lower than the training set.
+
+### Tuning the Complexity of a Decision Tree
+
+The decision tree classifier developed above has not been tuned or cross-validated to determine the depth of the tree that is best performing. To do this, we implement a grid search on k_fold validation. The implementation below is an example of how to execute this.
+
+```{r}
+#defining the model
+decision_tree_classifier <- decision_tree() %>%
+                            set_engine('rpart') %>%
+                            set_mode('classification')
+
+# classification workflow
+decision_tree_class_workflow <- workflow() %>%
+                                add_model( decision_tree_classifier %>% 
+                                set_args( cost_complexity = tune()  ) ) %>% # tree_depth = tune()
+                                add_formula(High ~.)
+
+# defining cross validation and parameter grid
+car_seats_kfold <- vfold_cv(train_data) # by defaults this is a 10 fold validation
+
+# Generate 10 values from this grid in the range (-3, -1)
+# (the relation of the cost complexity function works well with these values)
+param_grid <- grid_regular( cost_complexity( range = c(-3, -1)), levels = 10 ) 
+
+# tuning the model
+tune_res <- tune_grid(
+    decision_tree_class_workflow,
+    resamples = car_seats_kfold,
+    grid = param_grid,
+    metrics = metric_set(accuracy)
+)
+```
+
+### Visualizing Cost Complexity
+
+The `autoplot()` function returns the Accuracy to Cost_Complexity parameter to help us best assess how the grid search performed. We can see that model 7 performed best yielding the highest accuracy.
+
+```{r}
+autoplot(tune_res) + ggtitle('Cost Complexity Plot: Accuracy to Cost Complexity')
+```
+
+### Extracting the Best Performing Model
+
+From the visualization, we know that the best performing model based on accuracy is Model 7. We can now extract the model using the function `select_subset`.
+
+```{r}
+best_complexity <- select_best(tune_res, metric = "accuracy")
+best_complexity
+```
+
+### Fitting the Best Model to the Full Train Data
+
+With have performed cross validation to extract the best performing model.
+
+```{r}
+# extracting the final classifier
+decision_tree_final_classifier <- finalize_workflow( decision_tree_class_workflow, best_complexity )
+
+# fitting it to the full train data
+decision_tree_final_fit <- fit(decision_tree_final_classifier, data = train_data)
+
+decision_tree_final_fit
+```
+
+```{r}
+decision_tree_final_fit %>%
+  extract_fit_engine() %>%
+  rpart.plot(roundint = FALSE)
+```
+
+```{r}
+# train dataset accuracy
+augment( decision_tree_final_fit, new_data = train_data ) %>%
+    accuracy(truth = High, estimate = .pred_class)
+```
+
+```{r}
+# test dataset accuracy
+augment( decision_tree_final_fit, new_data = test_data ) %>%
+    accuracy(truth = High, estimate = .pred_class)
+```
+
+Using the improved model from the grid search, we observe that the performance has not improved from the original decision tree model. The depth of the decision tree for this dataset is not very significant to suggest that pruning strategies may be efficient. Exploring other techniques could improve accuracy. As it stands, we are able to classify new dataset with 76% accuracy.
+
+# Fitting Regression Trees
+
+For this part of the lab lab, we will use the Ames Housing dataset, similar to the dataset from the first lab to perform regression using Decision Trees. The dataset is available on the course repository. You can follow along the content to implement the Lab Content.
+
+```{r}
+# loading the ames dataset
+data("ames")
+
+head(ames, n=5)
+```
+
+The response variable from the dataset is the `Sale_Price`. As see on the data overview, there are a number of variables/features that are part of the dataset. We will fit all of these features into the Tree Model.
+
+```{r}
+# for reproducibility
+set.seed(5672)
+
+ames_split <- initial_split(ames, prop = .8)
+
+# training datasets
+train_data <- training(ames_split)
+test_data <- testing(ames_split)
+
+dim(train_data); dim(test_data);
+```
+
+```{r}
+# fitting a regression
+decision_tree_regression <-  decision_tree() %>%
+                             set_engine("rpart") %>%
+                             set_mode("regression")
+```
+
+```{r}
+# fitting a regression tree
+reg_tree_fit <- fit(decision_tree_regression, data = train_data, formula =  Sale_Price ~ .)
+
+reg_tree_fit
+```
+
+## Pruning Complexity Parameter
+
+The `rpart` engine performs a range of cost complexity assessments even with the base model. It performs a 10-fold CV by default. The `plotcp()` method provides us with the visualization of the validation and a way to choose the number of terminal nodes to use. In the visualization below, 11 nodes seem to be best performing.
+
+```{r}
+reg_tree_fit %>% 
+  extract_fit_engine() %>% 
+  plotcp()
+```
+
+### Model Fit Assessment and Tree Visualization
+
+As this is a regression task, we can extract regression model assessment metrics such as `rmse` to the dataset.
+
+```{r}
+# showing the top predicted values
+augment( reg_tree_fit, new_data = train_data ) %>%
+    rmse( truth = Sale_Price, estimate = .pred )
+```
+
+```{r}
+#  Visualizing the Decision Tree
+reg_tree_fit %>% extract_fit_engine() %>% rpart.plot(roundint = FALSE) 
+```
+
+### Predictions on Test and New Observations
+
+We can then run predictions on the test data set and/or new observation in the same way we have with the train set above.
+
+```{r}
+augment( reg_tree_fit, new_data = train_data ) %>%
+    rmse( truth = Sale_Price, estimate = .pred )
+```
+
+### Cross-Validation for Complexity Parameter Exercise
+
+On the classification problem, we demonstrated how to perform a cross-validation on the Complexity Parameter. Your exercise for the lab is then to replicate that for the Regression Trees. You can use the following as a guide.
+
+1.  Create a model workflow
+2.  Add the `cost_complexity = tune()` within the `set_args()` function.
+3.  Add the `add_formula()` to the workflow
+4.  Define a `vfold_cv` on the data set
+5.  Create a grid parameter space.
+6.  Run the tuning with `tune_grid()`
+
+### Questions:
+
+1.  What does the Cost-Complexity Parameter Plot look like?
+2.  How would you compare the metric for the best_subset model with the model above?
+3.  How would you visualize the tree of the best model?

@@ -1,0 +1,168 @@
+---
+title: "Week 8 - Dimensionality Reduction Techniques"
+format: html
+editor: visual
+---
+
+## Week 8 - Dimensionality Reduction
+
+Welcome to the Week 8 Lab! In this lab, we will explore dimensionality reduction, a topic that you may have encountered in discussions on regularization. Specifically, we will focus on Principal Component Analysis (PCA). Our emphasis will be on the practical implementation of PCA, while the theoretical aspects will be covered in the lecture.
+
+### What is PCA?
+
+Principal Component Analysis (PCA) is a dimensionality reduction technique that is particularly useful for large datasets. It transforms the original variables into principal components, which retain most of the original information while reducing the number of variables. Datasets can easily contain hundreds or even thousands of dimensions. For instance, when assessing risks related to issuing loans, there are multiple dimensions such as credit score, income, experience, repayments, and more. Additionally, we intuitively understand that some dimensions are more important than others. PCA is a mathematical technique that helps us identify and focus on these principal components.
+
+PCA is valuable because it simplifies the complexity of high-dimensional data, making it easier to visualize and analyze. By reducing the dimensionality, PCA helps us identify the underlying structure in the data and often improves the performance of machine learning models.
+
+### Implementing PCA on USArrest Data
+
+For this lab, we will follow through the ISLR dataset to implement Principle Component Analysis. The dataset is available natively through the package and for your convenience, it is also available in our dataset folder. Let's load the dataset and explore it.
+
+```{r}
+library(tidymodels)
+library(tidyverse)
+library(ISLR2)
+#library(factoextra)
+library(proxy)
+library(ggplot2)
+library(ggthemr)
+
+ggthemr("fresh")
+```
+
+```{r}
+us_arrests <- as_tibble( USArrests, rownames = "state" )
+us_arrests %>% slice_head(n = 10)
+```
+
+In the dataset, we see that we have the number of arrests associated with each of the 50 states in the United States. Now let's briefly examining these dimensions per state.
+
+The code below returns the mean for each numerical dimension.
+
+```{r}
+us_arrests %>% 
+    select(-state) %>%
+    map_dfr(mean)
+```
+
+Looking closely at the data, we observe that there are vast discrepancies per crime time. For example, rape arrests are more than twice the murder arrests. Similarly, assaults have many more arrests than any other category, often more than three times other arrest. We can also check the variance of the data to see if any of the observations are influenced differently.
+
+```{r}
+us_arrests %>% select(-state) %>% map_dfr(var)
+```
+
+Similarly, we also notice large discrepancies in variances across the states on these crime arrests. Perhaps this is not surprising.
+
+These early observations are useful because they inform us of the fact that if we fail to transform the dataset, we are going to bias the principle component towards assault that contains most of the variance and observations.
+
+## Performing PCA with Scaling
+
+To perform PCA, we use the function `prcomp`. The function has an inbuilt scale parameter that if set to true, it performs PCA with the data scaled. The scaling parameter forces the variables to have a mean of zero. Let's implement PCA on the dataset. Notice that we remove the state and only focus on the numerical vairables.
+
+```{r}
+pca_output <- us_arrests %>% 
+                select(-state) %>% 
+                prcomp(scale = TRUE)
+
+pca_output
+```
+
+The principle component matrix tells us that there are four principle components that office dimensional information. In particularly, the components are a linear combination of variables with the coefficient as the correlation value. The coefficients are also referred to as loadings.
+
+### Interpreting the Matrix
+
+The numbers (called loadings) indicate the direction and magnitude of each variable’s contribution to a principal component.
+
+Sign (Positive/Negative): A positive number means that the variable contributes positively to the component (as the variable increases, the component score increases), and a negative number means it contributes negatively (as the variable increases, the component score decreases).
+
+Magnitude: The larger the absolute value of the number, the more that variable contributes to that particular principal component.
+
+### Specific Interpretation
+
+PC1: Murder, Assault, and Rape have large negative loadings, indicating they strongly contribute to PC1 and in a similar direction. UrbanPop contributes less to PC1 (smaller magnitude).
+
+PC2: UrbanPop has a large positive loading, meaning it strongly influences PC2, while Murder, Assault, and Rape contribute less and in different directions (Murder and Rape contribute negatively; Assault contributes less but still negatively).
+
+PC3: Rape has a strong negative contribution to PC3, while Murder and UrbanPop have smaller positive contributions.
+
+PC4: Murder and Assault contribute most strongly but in opposite directions (Murder positively and Assault negatively).
+
+### Visualizing the PCA Contribution
+
+In the note above, we have shown how to read the data. An easier way to perform the same reading is to visualize that data by component, showing which variable contribute in that capacity to which component. Specifically, we add contribution into percentages to better understand the impact.
+
+```{r}
+library(ggthemr)
+ggthemr("flat")
+
+options(repr.plot.width = 10, repr.plot.height = 8)
+
+tidy(pca_output, matrix = "loadings") %>%
+    ggplot(aes(value, column)) + 
+    facet_wrap( ~ PC) +
+    geom_col() +
+    scale_x_continuous( labels = scales::percent )
+```
+
+### Extracting Matrix Score
+
+The loadings, also referred to as the rotations of the principal components, describe how the original variables contribute to each component. However, we do not use these loadings directly in place of our variables. Instead, we need to extract the scores matrix, which represents the original data transformed into the principal components. These scores can then be used in place of the individual variables. The code below demonstrates how to extract the scores matrix (the original variable values transformed into the components).
+
+```{r}
+augment(pca_output, new_data = us_arrests) %>% 
+    slice_head(n = 10)
+```
+
+We can now use the above components in the modelling process.
+
+### PCA as a Pre-Processing Step
+
+We’ve explored how to implement PCA on a dataset to extract components from the original variables. PCA is often used as a pre-processing step to reduce dimensionality and simplify the data before modeling. When using PCA as a pre-processing step, it's recommended to leverage the `recipes` framework, as it integrates seamlessly with the tidymodels ecosystem.
+
+The example below demonstrates how to implement PCA using `recipe`.
+
+```{r}
+pca_recipe <- recipe( formula = ~., data = us_arrests ) %>% # use all the columns in the dataset
+                step_normalize(all_numeric()) %>%           # implement normalizaiton of the data
+                step_pca( all_numeric(), id = 'pca') %>%    # perform pca 
+                prep()
+
+pca_recipe %>%
+    bake(new_data =  NULL) %>%    # implements pca on the us_arrests original data 
+    slice_head(n = 10)
+```
+
+We can also apply this to new data. For example, lets choose a small subset of us_arrests and apply it.
+
+```{r}
+pca_recipe %>%
+    bake(new_data =  us_arrests[32:37, ]) %>%    # implements pca on the us_arrests original data 
+    slice_head(n = 10)
+```
+
+We can also retrieve the information as we did with the `prcomp()` function using the command below.
+
+```{r}
+tidy(pca_recipe, id = "pca", type = "coef")
+```
+
+### Specifying Thresholds for Components
+
+As we have seen, the loadings are returned and it is up to use to intepret them. Often times, we may wish to restrict the threshold of the component's linear correlation. In this instance, we can set a threshold. In the example below, we repeat the above process and set up a threshold of .7.
+
+```{r}
+recipe( formula = ~., data = us_arrests ) %>%                               # use all the columns in the dataset
+                step_normalize(all_numeric()) %>%                           # implement normalizaiton of the data
+                step_pca( all_numeric(), id = 'pca', threshold = .7) %>%    # perform pca 
+                prep() %>% 
+                bake( new_data = NULL ) %>%
+                slice_head(n = 20)
+
+```
+
+As you can see now, we have two components instead of 4 as was the previous case. This concludes our lab on Principle Component Analysis.
+
+Referrences:
+
+1.  ISLR Chapter 12
+2.  ISLR Tidyverse: <https://emilhvitfeldt.github.io/ISLR-tidymodels-labs/12-unsupervised-learning.html>

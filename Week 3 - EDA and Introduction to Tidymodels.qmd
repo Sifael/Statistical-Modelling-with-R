@@ -1,0 +1,439 @@
+---
+title: "Week 3 - EDA and Introduction to tidymodels"
+format: html
+editor: visual
+---
+
+## Week 3 Lab: Exploratory Data Analysis (EDA) and Introduction to tidymodels
+
+Welcome to the Week 3 Lab Session on Exploratory Data Analysis (EDA) and `tidymodels`. In this lab, we will focus on understanding data through visual and statistical techniques (EDA) and introduce the powerful `tidymodels` framework for building machine learning models in a consistent, flexible manner. By the end of this lab, you will be equipped with the skills to analyze your data more effectively and start building predictive models.
+
+The outline of the material will focus on:
+
+## 1. Exploratory Data Analysis (EDA)
+
+Exploratory Data Analysis is the critical first step in any data analytics project. It allows us to gain insights into the structure of our data, understand the relationships between variables, and detect anomalies or patterns that could impact modeling.
+
+1.  Visualizing Distributions and Relationships
+
+    -   Use of histograms, boxplots, scatter plots, and correlation matrices.
+
+2.  Understanding the distribution of data
+
+    -   Identifying unusual data points and determining whether transformations are needed.
+
+3.  Exploring Categorical vs. Numerical Data
+
+    -   Summarizing the key characteristics of both categorical and numerical variables.
+
+## 2. Introduction to tidymodels
+
+In this section, we’ll introduce the `tidymodels` package, a collection of packages for modeling and machine learning within the tidyverse. It provides a cohesive, consistent framework to streamline data preprocessing, model creation, and evaluation.
+
+1.  Setting Up a Modeling Workflow
+
+    -   Learn how to create reusable and reproducible workflows that include data preprocessing, model training, and validation.
+
+2.  Splitting Data into Training and Testing Sets
+
+    -   Understand the importance of creating training and testing datasets to prevent overfitting and ensure robust model performance.
+
+3.  Building and Evaluating Simple Models
+
+    -   Introduction to building basic models such as linear regression, using tidymodels.
+
+4.  Cross-Validation and Hyperparameter Tuning
+
+    -   Learn how to fine-tune your models using cross-validation techniques to optimize performance.
+
+## Exploratory Data Analysis with Chile Dataset
+
+For implementing EDA steps, we will closely follow the guidance from the Exploratory Data Analysis using R textbook and use the dataset Chile. The Chile dataset is from a national survey conducted in April and May of 1988 by FLACSO/Chile.
+
+We can load the data directly using the R package `car` or read it from the Datasets folder.
+
+```{r}
+# installing and loading the car package
+# install.packages("car")
+library(car)
+
+data(Chile)  # loading the package
+head(Chile)  # peaking into the data
+```
+
+Using the `head()` we see a sample of the data. We notice that the data contains varying variables of different data types. Before we go any further, we will first import the tidyverse library and convert the data from data.frame to tibble object.
+
+```{r}
+library(tidyverse)
+
+chile <- as_tibble(Chile)
+chile %>% slice_head(n = 5)
+```
+
+```{r}
+dim(chile)
+```
+
+We now know that we have a total of 2700 observations across 8 variables.
+
+Another useful question at the basic level is, what are the variable names and are they useful.
+
+```{r}
+names(chile)
+```
+
+Indeed for this dataset, the variables are meaningful without any intervention.
+
+### Variable Types
+
+We now have a general sense of the data we are working with as far as the dimensions and attribute names together with peeking through to see some of the sample observation. Next we look at the structure of the dataset.
+
+```{r}
+str(chile)
+```
+
+The data structure reveals that we have four numeric variables and four ordinal or categorical variables. Before diving into the details of each variable, it’s helpful to first consider the number of unique observations for each one. This initial step can also help identify any missing values that may be present.
+
+#### Checking Unique Values
+
+Checking of unique values can be performed at the variable level and the whole dataset level. This may allow us to identify rows of duplicates.
+
+```{r}
+n_distinct(chile)
+```
+
+Out of 2,700 observations, we’ve identified 8 non-unique entries. While these could potentially be duplicates, they might also represent legitimate repeated observations. To further investigate, it's important to examine the distinct values at the variable level. This can help us better understand the nature of these observations. We can achieve this using the following code:
+
+```{r}
+chile %>% summarise( across( everything(), ~n_distinct(.))) 
+```
+
+Note that the `across()` function which allows us to easily apply an operation across columns.
+
+### Missing Values
+
+Checking for Missing Values is an important part of fundamental data exploration task. The example below, checks for missing values across all variables.
+
+```{r}
+chile %>% summarise( across( everything(), ~ sum(is.na(.)))) 
+```
+
+```{r}
+options(repr.plot.width = 14, repr.plot.height = 10, repr.plot.res = 100)
+
+library(visdat)
+vis_miss(chile, cluster = TRUE)
+```
+
+Combining the missing value visualization and overall variable count, we notice that there are some missing observations on some columns, with  of the overall data that are missing.
+
+### Summarizing Numerical Values
+
+Now that we have a sense of what the dataset looks like, we can dig a little deeper into the individual variables. In particular, we can look at the summary statistics.
+
+```{r}
+chile %>% 
+    select_if( is.numeric ) %>% 
+    summary()
+```
+
+## Key Observations:
+
+1.  The relationship between the mean and median provides valuable insights into the skewness of the distribution. When the mean and median are close in value, the distribution is likely to be approximately normal. If the median is lower than the mean, the distribution is typically right-skewed (positively skewed), whereas if the median is higher than the mean, the distribution is usually left-skewed (negatively skewed). Understanding this relationship allows us to infer the distribution’s shape even before visualizing the data.
+
+2.  We can then use visualization for further confirm and/or evaluate features that have interesting indicators. The example below, plots the distribution of age from the dataset
+
+```{r}
+library(ggthemr)
+
+ggthemr('dust')
+
+chile %>% 
+    select_if( is.numeric ) %>% 
+    ggplot(., aes(x = age) ) +
+    geom_histogram(color = 'black', bins = 50) +
+    ggtitle("Distribution of Age")
+```
+
+```{r}
+chile %>% 
+    select_if( is.numeric ) %>% 
+    ggplot(., aes(x = statusquo) ) +
+    geom_histogram(color = 'black') +
+    ggtitle("Distribution of Statusquo")
+```
+
+### Income and Population
+
+Although income and population are numeric variables, they appear to be grouped into specific categories. This could be due to survey reporting, where respondents provided ranges rather than exact values. We can verify this by using the unique() or distinct() functions to examine the unique values in these distributions.
+
+```{r}
+chile %>% select(income, population) %>% summarise( across( everything(), ~n_distinct(.) ) )
+```
+
+This changes how we approach the visualization of these columns from histogram to barplot.
+
+```{r}
+chile %>% 
+    select_if( is.numeric ) %>% 
+    filter(!is.na(income) & is.finite(income)) %>%
+    ggplot(., aes(x = income) ) +
+    geom_bar(color = 'black') +
+    ggtitle("Distribution of Income")
+```
+
+```{r}
+chile %>% 
+    select_if( is.numeric ) %>% 
+    ggplot(., aes(x = population) ) +
+    geom_bar(color = 'black',) +
+    ggtitle("Distribution of Population")
+```
+
+### Categorical Variables
+
+We have four categorical variables that can be explored to gain insights into the data's origins. Examining the counts for each category is particularly useful in understanding the distribution within these groups.
+
+```{r}
+chile %>% 
+    select_if( ~ !is.numeric(.) ) %>%    # return non-numeric names
+    names() 
+```
+
+```{r}
+chile %>% 
+    select_if( ~ !is.numeric(.) ) %>% 
+    ggplot(., aes(x = sex) ) +
+    geom_bar(color = 'black',) +
+    ggtitle("Count of Observation by Sex")
+```
+
+```{r}
+chile %>% 
+    select_if( ~ !is.numeric(.) ) %>% 
+    ggplot(., aes(x = education) ) +
+    geom_bar(color = 'black',) +
+    ggtitle("Count of Observation by Education")
+```
+
+```{r}
+chile %>% 
+    select_if( ~ !is.numeric(.) ) %>% 
+    ggplot(., aes(x = region) ) +
+    geom_bar(color = 'black',) +
+    ggtitle("Count of Observation by Region")
+```
+
+We notice a few imbalances on Education and Region observations with some groups representing more of the observation that others. This is often a useful dimension to understand as categorical variables often inform numerical variables. For example, we can now look at income through the lens of education.
+
+```{r}
+library(ggridges)
+
+chile %>%
+    filter(!is.na(income) & is.finite(income) & !is.na(education)) %>%  # Remove non-finite values
+    ggplot(aes(x = income, y = as.factor(education), color = as.factor(education))) +  # Ensure education is a factor
+    #ggplot( aes(x = income, y = education, color = education) ) +
+    geom_density_ridges()  +
+    ggtitle("Distribution of Income by Education Level") 
+```
+
+We notice here that the education group PS and S have more tendencies to have higher income concentrations than P and those that did not report their education level.
+
+```{r}
+chile %>%
+    ggplot( aes(x = income, y = sex, color = sex) ) +
+    geom_density_ridges()  +
+    ggtitle("Distribution of Income by Sex")  
+```
+
+An interesting observation here is that both sexes seem to have similar distributions in income across different income brackets. This makes the gender impact on income fairly balanced.
+
+## Examining Relationship Across Variables
+
+In the previous section, we relied on our intuition to guide us in exploring the relationships between variables. However, as the number of variables grows, it becomes increasingly challenging to manually identify patterns and correlations. This is where a correlation matrix can help, providing a comprehensive overview of the relationships between all numeric variables.
+
+A correlation matrix is a powerful tool for visualizing the strength and direction of pairwise correlations between variables. By examining this matrix, we can quickly identify:
+
+-   Which variables are strongly correlated with each other
+
+-   Whether there are any anti-correlated pairs (i.e., as one variable increases, the other decreases)
+
+-   The overall structure of relationships between variables
+
+The code snippet below implements a correlation matrix using pearson correlation.
+
+```{r}
+options(repr.plot.width = 20, repr.plot.height = 15, repr.plot.res = 100)
+
+# install.packages("GGally")
+library(GGally) # library to plot correlation pairs
+
+chile %>% 
+    select_if( ~ is.numeric(.)) %>% 
+    drop_na() %>%                     # drops missing values
+    ggpairs(., title = "Correlation Pair Plot for Numeric Features")
+```
+
+From the correlation matrix, we do not see any strong linear correlations between the numeric variables. We observe very week positive and negative correlations suggesting that the variables are linearly independent from each other.
+
+### Imputing Missing Values
+
+Earlier, we observed that some variables had missing values. On this section, we use imputation techniques to fill the missing values. Let's first recall the missing values.
+
+```{r}
+chile %>% summarise( across( everything(), ~ sum(is.na(.))))
+```
+
+There are many ways to impute missing values. With this example, we will use K-Nearest Neighbor. This is driven by the fact that this is a survey data and we would expect similar responses from similar profiles.
+
+The code below demonstrates how to implement this. Specifically, we use $5$ nearest neighbors. It is important to notice that we provide a model formula within the recipe to determine which variables will be used for imputation.
+
+```{r}
+library(recipes)
+
+# generating knn_recipe
+knn_recipe <- recipe( vote ~ ., data = chile ) %>%
+                step_impute_knn( all_predictors(), neighbors = 5)
+
+# preparing the knn_recipe
+knn_recipe_prep <- prep(knn_recipe, chile)
+
+# knn imputed values
+knn_imputed_values <- bake(knn_recipe_prep, chile)
+```
+
+```{r}
+knn_imputed_values %>% summarise( across( everything(), ~ sum(is.na(.))))
+```
+
+## Introducing Tidymodel for Prediction
+
+So far, we have seen how to perform exploratory data and develop imputation techniques. With our dataset, we have not had to perform any significant data transformation beyond imputation. This is intentional for this lab, however, not that in many cases, it is expected to perform transformations on your dataset ahead of modelling.
+
+On this section, we formally introduce `tidymodels`, a framework for modelling data in R that includes a collection of various packages and methods into an integrated workflow. For more details, you can visit [https://www.tidymodels.org](https://www.tidymodels.org/) to learn more.
+
+Let's use the example we have to build a classification model. We will again use K-NN which is a simple model to reduce complexity.
+
+Our implementation steps will include the following:
+
+1.  Split the data into training and testing
+
+2.  Develop a model object - define engine, specification and fit
+
+3.  Fit the model
+
+4.  Extract Model Results and Metrics
+
+### Splitting the data into training and testing set
+
+We begin by splitting the data into a training set and test set using the rsamples package that is colled directly from tidymodels
+
+```{r}
+library(tidymodels)
+library(tidyverse)
+```
+
+```{r}
+chile_df <- knn_imputed_values %>% drop_na() # removes the observations with outcome 
+
+## splitting the data into train and test
+data_split <- initial_split( data = chile_df,  strata = vote, prop = .8 )
+
+train_data <- training(data_split)
+test_data <- testing(data_split)
+
+dim(train_data); dim(test_data);
+```
+
+### Model Definition
+
+As noted earlier, we implement a classification model using KNN to predict the vote based on other features. Here, we make sure that we define both the mode and engine as `parsnip` calls other packages and engines to perform the modeling process.
+
+```{r}
+knn_model <- nearest_neighbor( neighbors = 5) %>%
+                set_mode("classification") %>%
+                set_engine("kknn")
+
+knn_model
+```
+
+### Fitting the Model
+
+Once the model object is defined, we can proceed to fit the model. While it's possible to combine these steps into a single operation, we are separating them here for clarity and to facilitate discussion.
+
+```{r}
+# remember that you will need the kknn package to successfully run this
+knn_fit <- knn_model %>% fit( vote ~ ., data = train_data )
+
+knn_fit
+```
+
+We can see that the model has run successfully. We can now move on to looking at the predictions and assessing the model performance.
+
+### Predictions and Model Assessment
+
+To retrieve predictions, we use the `augment` function, which accepts a model object and a dataset as inputs. The example below demonstrates the predictions on the training set, displaying the first 10 rows for brevity. Notably, the prediction results include both the predicted class and the associated probabilities.
+
+```{r}
+augment( knn_fit, new_data = train_data) %>% slice_head(n  = 10)
+```
+
+The same can be done for the `test_set`
+
+```{r}
+augment( knn_fit, new_data = test_data) %>% slice_head(n  = 10)
+```
+
+### Confusion Matrix for Classification
+
+The confusion matrix can also be generated using the `conf_mat()` function, which takes the true labels and the predicted values as inputs.
+
+```{r}
+augment( knn_fit, new_data = train_data) %>%
+         conf_mat(truth = vote, estimate = .pred_class)
+```
+
+```{r}
+augment( knn_fit, new_data = test_data) %>%
+         conf_mat(truth = vote, estimate = .pred_class)
+```
+
+### Additional Metrics
+
+The confusion matrix provides a detailed, matrix-based view of model predictions, but it doesn’t distill this information into actionable performance metrics. To gain deeper insights into model performance, we implement additional classification metrics below, each offering a specific perspective on how well the model is performing.
+
+```{r}
+augment( knn_fit, new_data = train_data ) %>% 
+    summarise(
+               accuracy = mean( .pred_class == vote),
+               sensitivity = sens_vec(truth = vote, estimate = .pred_class),
+               specificity = spec_vec(truth = vote, estimate = .pred_class),
+               precision = precision_vec(truth = vote, estimate = .pred_class),
+               recall = recall_vec(truth = vote, estimate = .pred_class),
+               f1 = f_meas_vec(truth = vote, estimate = .pred_class)
+)
+```
+
+```{r}
+augment( knn_fit, new_data = test_data ) %>% 
+    summarise(
+               accuracy = mean( .pred_class == vote),
+               sensitivity = sens_vec(truth = vote, estimate = .pred_class),
+               specificity = spec_vec(truth = vote, estimate = .pred_class),
+               precision = precision_vec(truth = vote, estimate = .pred_class),
+               recall = recall_vec(truth = vote, estimate = .pred_class),
+               f1 = f_meas_vec(truth = vote, estimate = .pred_class)
+)
+```
+
+Our model's performance on both training and test sets, we notice a disparity, achieving high accuracy on the training data, however our model struggles on the test set. This discrepancy highlights the importance of evaluating models on unseen data to gauge their true generalizability.
+
+In the coming session, we will discuss methods for improvement and further evaluation. As we proceed with our modeling endeavors, you'll notice that we will be leveraging `tidymodels` extensively. In fact, almost all future model development will utilize this flexible and efficient framework, allowing us to focus on more advanced topics in machine learning.
+
+### References:
+
+Exploratory Data Analysis Using R - Ronald K. Pearson. Chapter 3.
+
+<https://rpubs.com/StatsGary/tidymodels_from_scratch>
+
+[https://www.tidymodels.org](https://www.tidymodels.org/)

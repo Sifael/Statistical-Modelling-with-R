@@ -1,0 +1,282 @@
+---
+title: "Ridge Regression"
+format: md
+editor: visual
+---
+
+## Ridge Regression
+
+The Ridge Regression method is a regularization technique that imposes a penalty on predictors with a significant large parameter. By adding a tuning parameter, $\lambda$ to the objective function, ridge regression imposes a penalty for large coefficients forcing the overall effect to zero in order to minimize the objective function (and vice versa).
+
+To motive Ridge regression, let's reconstruct the loss function/objective function for regression by adding the weights. Mathematically, we can think of it this way:
+
+$$
+RSS(w) + \lambda||W||_2^2
+$$
+
+where $RSS$ is the residual sum of squares, $\lambda$ is the ridge hyper parameter
+
+What happens when:
+
+$\lambda$ = 0, then the total cost is $RSS(W)$ which is the original least squares formulation of linear regression
+
+$\lambda = \infty$, the only minimizing solution is when $\hat W$ = 0, because the the total $RSS(W) = 0$.
+
+Then the ridge solution is always between $0 \le ||W||_2^2 \le RSS(W)$
+
+Now that we have explore conceptually the idea, we move on to implementation.
+
+## Implementation of Ridge Regression with Hitter's Dataset
+
+In the note below, we implement ridge regression using tidymodels. Specifically, we will need the `glmnet` package which houses the ridge regression engine.
+
+```{r}
+library(ISLR2)
+library(tidyverse, quietly = TRUE)
+
+hitters <- as_tibble(Hitters) %>% 
+            filter( !is.na(Salary) )
+dim(hitters)
+```
+
+### Defining the Ridge Regression Model
+
+As we have done several times on the lab, we begin by
+
+```{r}
+# install.packages("glmnet")
+library(tidymodels, quietly = TRUE)
+
+ridge_regression <- linear_reg( mixture = 0, penalty = 0 ) %>%  # setting a rigde penalty of zero
+                    set_mode("regression") %>%
+                    set_engine("glmnet")
+
+ridge_regression
+```
+
+We have not defined the specification for the ridge regression model. We can go ahead and fit the model using the data. For this modeling process, we skip the train and test splitting. This knowledge is expected. Instead, we focus on the implementation details.
+
+```{r}
+ridge_regression_fit <- fit( ridge_regression, Salary ~ ., data = hitters )
+
+ridge_regression_fit %>% tidy()
+```
+
+The output above shows what the estimate of the variable parameter is when rigde penalty is set to zero (no penalty). However, we can see the results when the ridge penalty is increased. Not that we may need a sufficiently high ridge penalty to see the changes in the estimated coefficient. In the case below, we use 1000.
+
+```{r}
+tidy(ridge_regression_fit, penalty = 1000)
+```
+
+#### Try a few penalty values for yourself now. What do you see as the result?
+
+### Visualizing Impact of Penalty
+
+Using parsnip::extract_fit_engine we can visualize how the magnitude of the coefficients are being regularized towards zero as the penalty goes up.
+
+```{r fig.height=5, fig.width=10 }
+par(mar = c(5, 5, 5, 1))
+ridge_regression_fit %>%
+  parsnip::extract_fit_engine() %>%
+  plot(xvar = "lambda")
+```
+
+### Tuning the Ridge L2 Penalty
+
+We have seen that we can implement various penalty values for the same model. This is well and good for demonstration by in reality, we need a way to optimize the L2 parameter. In the next section, we demonstrate how to build a pipeline that finds the best penalty value for us.
+
+We begin by splitting the data into train and test and then create a cross-validation set.
+
+```{r}
+set.seed(1234)
+hitters <- as_tibble(ISLR2::Hitters) %>% drop_na()
+
+names(hitters)
+```
+
+```{r}
+data_split <- initial_split(hitters, strata = "Salary")
+
+train_data <- training(data_split)
+test_data <- testing(data_split)
+
+hitters_fold <- vfold_cv(train_data, v = 10)
+hitters_fold
+
+```
+
+### Tune Grid for Parameter Search
+
+We can now use the `tune_grid()` function to perform hyperparameter turning using grid search. To do this, we need to create a workflow, samples and output file to contain the parameters. Before we do this, we will need to perform data processing as ridge regression is sensitive to scale. For this, we will normalize the data.
+
+```{r}
+ridge_recipe <- recipe( formula = Salary ~ ., data = train_data ) %>%
+                step_novel( all_nominal_predictors() ) %>% # Handle new (unseen) factor levels in categorical predictors
+                step_dummy( all_nominal_predictors() ) %>% # Convert all categorical predictors to dummy/indicator variables
+                step_zv( all_predictors() ) %>%            # Remove predictors with zero variance (constant variables)
+                step_normalize( all_predictors() )         # Normalize (center and scale) all predictors to have a mean of 0 and standard deviation of 1
+
+ridge_recipe
+```
+
+With the pre-processing above complete, we can now create the model specification. This time, we set the penalty to `tune()`.
+
+```{r}
+ridge_spec <- linear_reg( penalty = tune(), mixture = 0 ) %>%
+                set_mode("regression") %>%
+                set_engine("glmnet")
+
+ridge_spec
+```
+
+```{r}
+ridge_workflow <- workflow() %>%
+                  add_recipe( ridge_recipe ) %>%
+                  add_model( ridge_spec )
+
+ridge_workflow
+```
+
+Finally, the last thing we need is the values of the penalty we are going to pass on to the grid search. We can provide these range of values in many forms. One of the forms is using `grid_regular()` as demonstrated below.
+
+```{r}
+
+penalty_grid <- dials::grid_regular(
+  x = dials::penalty(
+    # Define the range of the penalty parameter.
+    range = c(-5, 5),
+    # Apply a logarithmic transformation (base 10) to the penalty values.
+    trans = scales::log10_trans()
+  ),
+  # Create 50 evenly spaced levels within the specified penalty range.
+  levels = 50
+)
+
+penalty_grid %>% slice_head( n = 10)
+
+```
+
+Note that the values here are scaled to meet the normalization step we performed on the dataset.
+
+### Tuning the Parameter
+
+Now we have everything we need. We can go ahead and implement the grid search.
+
+```{r}
+tune_res <- tune::tune_grid(
+  object = ridge_workflow,    # object with ridge model
+  resamples = hitters_fold,   # define cross-validation fold
+  grid = penalty_grid        # testing penalty values
+)
+
+tune_res
+```
+
+We see that our cross validation is complete. We can immediately look at the cross-validation plot output to gauge the impact of regularization on the data.
+
+```{r}
+autoplot(tune_res)
+```
+
+From the plot we see that early regularization have limited impact on `rsq` and `rmse.` However, over time we see the impact on the metrics with `rsq` as the penalty increases. This is also the case for `rsme` metric as well.
+
+### Overall Metrics
+
+We can capture the metrics for the regularization grid search by passing the `collect_metrics` function on the tune object \`tune_res\`. This returns a table of all penalties and associated metrics.
+
+```{r}
+collect_metrics(tune_res)
+```
+
+To get the best penalty, we can simply use the `select_best` which takes on the grid_search objects and a parameter to select for the best results. The example below uses `rsq`
+
+```{r}
+best_penalty <- select_best(tune_res, metric = "rsq")
+best_penalty
+```
+
+Finally, we can then extract the final penalization and retrieve the model fit.
+
+```{r}
+ridge_final <- finalize_workflow( ridge_workflow, best_penalty )
+
+ridge_final_fit <- fit(ridge_final, data = train_data)
+```
+
+Now, we apply this to the testing data.
+
+```{r}
+augment(ridge_final_fit, new_data = test_data) %>%
+  rsq(truth = Salary, estimate = .pred)
+```
+
+## Lasso Regression
+
+Lasso Regression, short for **Least Absolute Shrinkage and Selection Operator**, is another powerful regularization technique used in linear modeling. Like Ridge Regression, Lasso introduces a penalty to the regression model to prevent overfitting and manage multi-collinearity. However, the key difference lies in the nature of the penalty applied.
+
+In Lasso Regression, the penalty added to the objective function is based on the absolute values of the coefficients (known as the L1 norm), as opposed to the squared coefficients used in Ridge Regression (L2 norm). Furthermore, the Lasso Penalty imposes it's impact by forcing coefficients of variables that are small to zero, thereby eliminating insignificant features.
+
+Because we have seen how to implement Ridge regression, we will now demonstrate implementation of Lasso Regression. We will skip some ideas already covered earlier in the note.
+
+Let's generate the recipe, model spec and workflow.
+
+```{r}
+
+lasso_recipe <- 
+  recipe(formula = Salary ~ ., data = train_data) %>% 
+  step_novel(all_nominal_predictors()) %>% 
+  step_dummy(all_nominal_predictors()) %>% 
+  step_zv(all_predictors()) %>% 
+  step_normalize(all_predictors())
+
+
+lasso_spec <- 
+  linear_reg(penalty = tune(), mixture = 1) %>% # mixture 1 for L1 - Lasso penalty
+  set_mode("regression") %>% 
+  set_engine("glmnet") 
+
+lasso_workflow <- workflow() %>% 
+  add_recipe(lasso_recipe) %>% 
+  add_model(lasso_spec)
+```
+
+Because we saw individual implementation above, this sections goes directly into the grid search of lass parameter.
+
+```{r}
+penalty_grid <- grid_regular(penalty(range = c(-2, 2)), levels = 50)
+```
+
+We know use the `tune_grid` function to implement tuning of the lasso penalty.
+
+```{r}
+tune_res <- tune_grid(
+  lasso_workflow,
+  resamples = hitters_fold, 
+  grid = penalty_grid
+)
+
+library(ggthemr)
+
+ggthemr('fresh')
+
+autoplot(tune_res)
+```
+
+Again, we see mixed effects of the metrics with each lasso penalty. We can then extract the best model using the `select_best()`
+
+As we have also seen earlier, we can directly select the best model and train it on the data and consequently run predictions.
+
+```{r}
+best_penalty <- select_best( tune_res, metric = "rsq" )
+
+lasso_final <- finalize_workflow(lasso_workflow, best_penalty)
+
+lasso_final_fit <- fit(lasso_final, data = train_data)
+```
+
+```{r}
+augment(lasso_final_fit, new_data = test_data) %>%
+  rsq(truth = Salary, estimate = .pred)
+```
+
+We see a slight improvement using the Lasso Regression technique over the Ridge Regression on the overall r-squared metric.

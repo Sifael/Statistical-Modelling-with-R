@@ -1,0 +1,235 @@
+---
+title: "Week 6 - Ensemble Methods"
+format: html
+editor: visual
+---
+
+## Week 6 - Ensemble Methods - Bagging, Boosting and Random Forest
+
+In the last lab, we discussed Decision Trees which form the basis for Ensemble Methods like Random Forest. This session, we delve into Ensemble Methods, a set of powerful techniques that combine the predictions of multiple models to improve overall performance. These methods are particularly effective in reducing overfitting, increasing robustness, and enhancing predictive accuracy. We will focus on three key ensemble techniques: Bagging, Boosting, and Random Forest.
+
+In this lab we will continue building on the understanding the `tidymodels()` directly leveraging the datasets associated with this topic on the ISLR Textbook. The dataset is `Boston` from the MASS package. For your convenience, the dataset is also available in the folder.
+
+### Loading and Preparing the Dataset
+
+Let's begin by loading and preparing the dataset with some simple basic steps. We won't perform any data preprocessing for this task but instead focus on the technical implementation of the ensemble techniques. Recall that this is the `boston housing dataset`
+
+```{r}
+library(tidymodels, quietly = TRUE)
+library(tidyverse, quietly = TRUE)
+library(rpart.plot, quietly = TRUE)
+library(vip, quietly = TRUE)
+library(ggthemr)
+library(gt)
+
+# setting the theme for the notebook
+ggthemr("dust")
+
+data("Boston", package = "MASS")
+boston <- as_tibble(Boston)
+
+boston %>% slice_head(n = 10) %>% gt()
+```
+
+### Preparing the Dataset
+
+As we have done in many occassions, we will implement a test and train splitting of the dataset. We will then fit the model on the training set and evaluate it on the test set.
+
+```{r}
+data_split <- initial_split(boston, strata = "medv", prop = .8)
+
+train_data <- training(data_split)
+test_data <- testing(data_split)
+
+dim(train_data); dim(test_data)
+```
+
+### Bagging - Bootstrap Aggregating
+
+Bagging is an ensemble technique that improves the stability and accuracy of machine learning algorithms by reducing variance. The basic idea behind bagging is to train multiple instances of a model on different bootstrap samples of the original dataset, and then aggregate their predictions.
+
+-   Bootstrap Sampling: This involves creating multiple datasets by sampling with replacement from the original dataset. Each bootstrap sample is used to train a separate model.
+
+-   Model Averaging: For regression, the predictions from each model are averaged, while for classification, the most common class (majority vote) is selected.
+
+Bagging works particularly well with high-variance models, such as decision trees, by smoothing out their predictions and making the final model more robust.
+
+### Defining the Bagging Model
+
+In this course, we have focused entirely on building models using `tidymodels`. In particular, we always define the model specification and then fit the model. Our task is regression using Bagging model. We will leverage the randomForest package for the implementation. You may need to install it.
+
+```{r}
+
+# random forest specificaiont
+bagging_spec <- rand_forest(  mtry = .cols() ) %>%   # sample all columns
+                set_engine("randomForest", importance = TRUE) %>%
+                set_mode("regression")
+```
+
+With the model specification defined, we can now train the model to the train dataset and see how it performs.
+
+```{r}
+bagging_fit <- fit(bagging_spec, medv ~ ., data = train_data)
+```
+
+```{r}
+augment( bagging_fit, new_data = train_data ) %>%
+    rmse( truth = medv, estimate = .pred )
+```
+
+```{r}
+augment( bagging_fit, new_data = train_data ) %>%
+    ggplot( aes(medv, .pred)) + 
+        geom_abline() +
+        geom_point(alpha = .5) +
+        ggtitle("Prediction v. Actual Medv: Train Data")
+```
+
+The performance of our model is quite good on the test set with a very low rmse. Now, let's see how it performs on the test data.
+
+```{r}
+augment( bagging_fit, new_data = test_data ) %>%
+    rmse( truth = medv, estimate = .pred )
+```
+
+```{r}
+# visualizing the predictions
+augment( bagging_fit, new_data = test_data ) %>%
+    ggplot( aes(medv, .pred)) + 
+        geom_abline() +
+        geom_point(alpha = .5) +
+        ggtitle("Prediction v. Actual Medv: Test Data")
+```
+
+Inspecting the prediction on the test set visually, we see that our model performs quite decently. In the previous labs, we have explored how to get regression performance metrics. Implement those steps to get the metrics for this model.
+
+### Variable Importance
+
+Like classical regression methods, we can look at the usefulness of the features and their predictive importance. While we can't do it the same way, say using p-values, we can use the `vip` package to return the visualization of the ordered feature importance of the model. We simply pass the model fit object and we get the feature importance ranking.
+
+```{r}
+vip(bagging_fit)
+```
+
+We have broadly demonstrated boosting. Now, we will specifically looking at Random Forest.
+
+## Random Forest
+
+Random Forest is a machine learning technique that uses an ensemble of decision trees to make decision. Effectively, random forest is generated from a running different decision trees from random samples of the data. This ensures that each decision tree may capture specific attributes that may reduce bias and some not, and in consequence, the collection/ensemble of these trees will reduce overfitting that is often a weakness of decision trees.
+
+### Defining the Random Forest Model
+
+```{r}
+random_forest <- rand_forest( mtry = 6 ) %>%   # mtry: Number of variables to try with each sampling
+                 set_engine("randomForest", importance = TRUE) %>%
+                 set_mode("regression")
+
+random_forest
+```
+
+```{r}
+random_forest_fit <- fit( random_forest, formula = medv ~ ., data = train_data)
+
+random_forest_fit
+```
+
+```{r}
+augment(random_forest_fit, new_data = train_data) %>%
+  rmse(truth = medv, estimate = .pred)
+```
+
+```{r}
+augment( random_forest_fit, new_data = train_data ) %>%
+    ggplot( aes(medv, .pred)) + 
+        geom_abline() +
+        geom_point(alpha = .5) +
+        ggtitle("Random Forest Prediction v. Actual Medv: Train Data")
+```
+
+The model performs very well, similar to our base boosting model.
+
+```{r}
+augment( random_forest_fit, new_data = test_data ) %>%
+    ggplot( aes(medv, .pred)) + 
+        geom_abline() +
+        geom_point(alpha = .5) +
+        ggtitle("Random Forest Prediction v. Actual Medv: Test Data")
+```
+
+```{r}
+augment(random_forest_fit, new_data = test_data) %>%
+  rmse(truth = medv, estimate = .pred)
+```
+
+We notice a slight improvement from bagging model on $rsme$ as compared to random forest fit. Broadly, both models perform nearly the same and correctly so because they are implementing very similar approaches.
+
+### Variable Importance Features
+
+We can also get variable importance as we did with boosting model using the same function `vip`.
+
+```{r}
+vip(random_forest_fit, ) + ggtitle("Random Forest - Feature Importance")
+```
+
+Note that the importance value and ranking with random forest and boosting models earlier are different and variables have shifted in position. Example, variables `age` and `nox` has shifted in importance and their respective magnitude as well.
+
+## Boosting
+
+Boosting is an ensemble technique that aims to improve learning by sequentially training week learners, focusing on incorrect predictions inorder to improve them. This happens by assigning higher weights to mis-classified or wrong predictions which then forces the sequential models to pay attention to these features. The combination of all these models ultimately leads to a final model with low bias.
+
+Let's now see the implementation of this in `tidymodels`. Note that for boosting, we will need the package `xgboost`.
+
+```{r}
+boost_spec <- boost_tree( trees = 5000, tree_depth = 4 ) %>%
+              set_engine("xgboost") %>%
+              set_mode("regression")
+```
+
+```{r}
+boost_fit <- fit(boost_spec, formula = medv ~ ., data = train_data )
+```
+
+### Assessing the Model Outcome
+
+At this point, training and fitting the model should feel very pedestrian. With the model in hand, we can look at the performance of the model to determine how it did. We first look at the training set.
+
+```{r}
+augment(boost_fit, new_data = train_data) %>%
+  rmse(truth = medv, estimate = .pred)
+```
+
+```{r}
+augment(boost_fit, new_data = train_data) %>%
+  ggplot(aes(medv, .pred)) +
+  geom_abline() +
+  geom_point(alpha = 0.5) +
+  ggtitle("Boosting Prediction v. Actual Medv: Train Data")
+```
+
+```{r}
+augment(boost_fit, new_data = test_data) %>%
+  ggplot(aes(medv, .pred)) +
+  geom_abline() +
+  geom_point(alpha = 0.5) +
+  ggtitle("Boosting Prediction v. Actual Medv: Test Data")
+```
+
+```{r}
+augment(boost_fit, new_data = test_data) %>%
+  rmse(truth = medv, estimate = .pred)
+```
+
+On both the training and the testing set, the performance of the model is very good, better than the performance on the random forest model. Finally, we can look at the variable importance plot.
+
+```{r}
+vip(boost_fit) + ggtitle("Boost Model Variable Importance")
+```
+
+The boosting model offers a very different picture to what variables it considers important for prediction. For example, `crim` has moved up in importance compared to the other two models. Also notice that the scale is different.
+
+This now concludes the practical implementation of the ensemble methods for this lab.
+
+### References:
+
+1.  VIP Tool: <https://koalaverse.github.io/vip/articles/vip.html>
+2.  Ensemble Methods in tidymodels: <https://emilhvitfeldt.github.io/ISLR-tidymodels-labs/08-tree-based-methods.html>

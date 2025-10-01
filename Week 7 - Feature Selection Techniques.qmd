@@ -1,0 +1,196 @@
+---
+title: "Week 7 - Feature Selection and Regularization"
+format: html
+editor: visual
+---
+
+# Week 7 - Feature Selection and Regularization
+
+Welcome to Week 7 lab. This week we focus our attention on Feature Selection techniques and Regularized Regression methods. Feature selection and regularization are two essential strategies for refining regression models, ensuring they accurately capture the relationships between variables while minimizing overfitting. In this lab, we will provide you with the tools to be able to run Feature Selection techniques and Implement Regularized Linear regression methods. Specifically, we will focus on 2 key areas:
+
+1.  Feature Selection
+    -   Best Subset
+    -   Forward Selection
+    -   Backward Selection
+2.  Regularization in Regression
+    -   Ridge Regression
+    -   Lasso Regression
+
+## Feature Selection
+
+Feature selection is a crucial step in the machine learning pipeline that involves identifying and selecting the most relevant variables or features from a dataset to build effective predictive models. You have infact already be performing feature selection through techniques such as looking at the correlation matrix. In this section, we look at some of the more common feature selection in techniques and primarily focus on how to implement them using the R language.
+
+The material on this lab will closely follow the book `ISLR`. As a result, we will use the dataset `Hitters`. Below, we initialize the libraries and the dataset. The goal with the `Hitters` dataset is to predict the salary of a baseball player based on their associated Metrics.
+
+```{r}
+library(ISLR)
+library(gt)
+library(tidyverse, quietly = TRUE)
+
+data(Hitters)
+slice_head(Hitters, n=100) %>% gt()  
+```
+
+```{r}
+names(Hitters)
+```
+
+We will first need to check for any missing values, particularly on the dependent variable and omit those.
+
+```{r}
+hitters <- as_tibble(Hitters) %>% 
+            filter( !is.na(Salary) )
+dim(hitters)
+```
+
+### Best Subsets
+
+The Best Subset method involves searching through all possible combinations of features (or variables) to find the single combination that results in the best model performance. This is done by evaluating each subset of features using a chosen metric, such as mean squared error (MSE), and selecting the one with the lowest value.
+
+The package `leaps` offers the function `regsubsets()` which allows us to implement best subsets on the data and returns the best model based on the combination of predictions. The code below demonstrates how to implement this.
+
+```{r}
+library(leaps)
+
+full_regression_model = regsubsets(Salary ~ . , data = hitters)
+summary(full_regression_model)
+```
+
+```{r}
+reg_model_full = regsubsets(Salary ~ . , 
+                            data = hitters, 
+                            nvmax = 19) # return as many as 19 variables
+
+summary(reg_model_full)
+```
+
+It should be noted that the summary function also returns the metrics associated with the best subset feature selection. We can get the names of the associated metrics by checking the summary object names.
+
+```{r}
+names(summary(reg_model_full))
+```
+
+### Evaluating Best Subset Metrics Visually
+
+In the lecture discussions, we discussed comparison metrics including $R^2$, $R^2_{adjusted}$, mallow's $CP$, $AIC$ and $BIC$. All of these metrics provide useful benchmarks for determining the variables that offer the best predictive power. These values can all be retrieved from the subsets output object.
+
+We can inspect these visually using the `plot()` as demonstrated below. Note that the top model refers to the optimal/best subset.
+
+```{r  fig.width=15, fig.height=10 }
+# using ggthemr
+library(ggthemr)
+ggthemr('fresh')
+
+#options(repr.plot.width = 14, repr.plot.height = 14, repr.plot.res = 100)
+
+par(mfrow = c(2, 2))
+plot(reg_model_full, scale = "r2"); title("R^2");
+plot(reg_model_full, scale = "adjr2"); title("R^2 Adjusted");
+plot(reg_model_full, scale = "Cp"); title("Mallow's CP");
+plot(reg_model_full, scale = "bic"); title("bic");
+```
+
+## Mallow's CP
+
+Mallow's CP is a measure of evaluating and comparing models much like any other comparison approaches such as Adjusted $R^2$, AIC and BIC. Specifically, Mallow's CP provides an estimate of the prediction error present when important features are missing in the model. Therefore, we expect Mallow's CP to be lower when important features are present and higher when they are missing. Remember, if the model has fewer important predictive features, the residuals will be large and vice versa.
+
+In Mallow's CP, the full model will always have the value of $C_p = p + 1$. That is, if the full model has 5 features, the $C_p = p + 1 = 5 + 1 = 6$
+
+Mathematically, we can express the precise formula as:
+
+$$
+Mallow's C_p = \frac {SSE_p} {MSE_k} + 2(p + 1) - n
+$$
+
+where
+
+$SSE_p$ is the Sum of Squared Error of the Reduced Model,
+
+$MSE_k$ is the Mean Square Error of the Full Model
+
+$p$ is the subset model,
+
+$k$ the full model in Mallow's P
+
+$n$ is the number of observations
+
+## AIC - AKAIKE Information Criterion
+
+AIC, is another model selection metric that is best suitable for selecting models with different parameters. It helps in identifying the model that best balances goodness of fit with model complexity, favoring simpler models to avoid overfitting. The AIC value is calculated based on the likelihood of the model and includes a penalty for the number of parameters. Lower AIC values indicate a better-fitting model that is less likely to overfit the data.
+
+Mathematically, it is computed as:
+
+$$
+AIC = nln(SSE) - nln(n) + 2(k + 1)
+$$
+
+where
+
+$n$ is the sample size,
+
+$k$ is the number of predictors
+
+## BIC - Bayesian Information Criterion
+
+The BIC is an extension of the AIC with a particular emphasis on the number of parameters. The BIC places a higher penalty on the number of parameters in the model so will tend to reward more parsimonious (smaller) models. Mathematically, it is computed as:
+
+$$
+BIC = nln(SSE) - nln(n) + (k + 1)ln(n)
+$$
+
+where
+
+$n$ is the sample size,
+
+$k$ is the number of predictors
+
+## RSS and Adjusted R-Squared - Visually
+
+RSS and Adjusted R-Squared can be visualized to determine how these models perform comparatively which offer an easier way to assess the model themselves. Below is the implementation of the visualization.
+
+```{r fig.width=10, fig.height=6 }
+
+options(repr.plot.width = 15, repr.plot.height = 7, repr.plot.res = 100)
+
+par(mfrow = c(1, 2))
+plot(summary(reg_model_full)$rss, xlab = "Number of Variables", ylab = "RSS", type = "l");
+title("RSS by Variable Selection")
+plot(summary(reg_model_full)$adjr2, xlab = "Number of Variables", ylab = "Adjusted RSq", type = "l");
+title("Adjusted R^2 by Variable Selection")
+```
+
+### Retrieving the Coefficients
+
+We observe that multiple combinations of predictors can yield similar assessment metrics. To extract the selected variables and their coefficients, we can use the `coef()` function, specifying the model and the desired number of predictors. Based on the plot of adjusted $R^2$, it appears that the model with 11 predictors optimally explains the variation in the response variable.
+
+```{r}
+coef(reg_model_full, 11)
+```
+
+# Implementing Forward and Backward Stepwise Selection
+
+We have seen how to implement subsets and to retrive metrics from their summaries. The implementation of Forward and Backward Selection is straight forward. We simply pass the method `forward` and `backward` to the method argument. We can get all the information about the metrics in exactly the same ways we did above.
+
+```{r}
+# forward model variable selection
+reg_model_forward <- regsubsets(Salary ~ ., data = hitters, nvmax = 19, method = "forward")
+
+# summary of model forward
+summary(reg_model_forward)
+```
+
+```{r}
+# backward model variable selection
+reg_model_backward <- regsubsets(Salary ~ ., data = hitters, nvmax = 19, method = "backward")
+
+# summary of model forward
+summary(reg_model_backward)
+```
+
+This concludes this part of the lab. We will pick up on the next part of the lab using the RStudio and R Quarto Notebooks.
+
+## References:
+
+1.  Review of Mallow's CP for Model Selection <https://www.youtube.com/watch?v=Clql44fHLfM>
+
+2.  AIC Computation: <https://online.stat.psu.edu/stat462/node/199/>

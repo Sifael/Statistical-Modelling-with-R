@@ -1,0 +1,227 @@
+---
+title: "Week 8 - Clustering"
+format: html
+editor: visual
+---
+
+## Week 8 - Clustering
+
+Welcome to Week 8 lab. This week we focus our attention on **Clustering techniques**. Clustering is a fundamental unsupervised learning approach that allows us to discover inherent groupings within data based on similarity measures, without the need for predefined labels. In this lab, we will provide you with the tools to perform various clustering methods, enabling you to identify patterns and structures in your datasets. Specifically, we will focus on three key areas:
+
+1.  **K-Means Clustering**
+    -   Understanding the k-means algorithm
+    -   Implementing k-means clustering in R
+    -   Determining the optimal number of clusters
+2.  **Hierarchical Clustering**
+    -   Exploring agglomerative
+    -   Creating dendrograms to visualize cluster hierarchies
+    -   Applying hierarchical clustering to real-world data
+
+By the end of this lab, you will be equipped to apply these clustering techniques to your own data, helping you uncover meaningful insights and make data-driven decisions without relying on labeled outcomes.
+
+### Loading Sample Cluster data
+
+Today, we will be using the cluster.txt file which contains such pre-generated cluster within a dataset.
+
+```{r}
+library(tidyverse)
+library(tidymodels)
+library(tidyclust)   # for implementing clustering
+library(skimr)
+library(ggthemr)
+
+ggthemr("flat")
+
+# Read the csv file into a tibble
+data <- as_tibble(read_csv(file = 'Datasets/cluster.txt'))
+data %>%  slice_head(n = 5)
+
+```
+
+```{r}
+data %>% glimpse()
+
+```
+
+```{r}
+data %>%  skim()
+```
+
+### Visual Inspectatopm of the Dataset
+
+A useful exercise would be to visualize the dataset to determine whether clustering is a good idea.
+
+```{r}
+ggplot(data = data, aes( x = feature_a, y = feature_b )) + 
+      geom_point( shape = 21, size = 1) +
+      ggtitle('Sample Cluster Dataset')
+```
+
+## Implementing Clustering Model with tidyclust
+
+Much like we have done many times, we set up the model usting tidymodels framework, specifying the method, engine and mode. The `nstart=20` allows for the engine to have multiple centroid starts. Once we have set the parameters we can run out model.
+
+```{r}
+kmeans_spec <- k_means(num_clusters = 5) %>%
+                set_mode("partition") %>%
+                set_engine("stats") %>%
+                set_args(nstart = 20)  # setting multiple initial starts for centroids
+
+kmeans_spec
+```
+
+```{r}
+set.seed(1234)
+kmeans_fit <- kmeans_spec %>%
+              fit(~., data = data)
+
+# the summary plots a number of items. lets get the fit
+extract_fit_summary(kmeans_fit)
+```
+
+### Extracting Centroids and Model Summary
+
+Once the model has been train, one thing we can do is extract centroids directly from the dataset. This allows us to observe the center of the cluster as determined by the model.
+
+```{r}
+extract_centroids(kmeans_fit)
+```
+
+Extracting the Summary is the next logical step, allowing us to reveal further details about the model including a sense of the $SSE$ within and across the dataset.
+
+```{r}
+extract_fit_summary(kmeans_fit)
+```
+
+### Visualizing the Clusters 
+
+The code below visualizes the original data with the cluster overlaid as the categorical block. This way we can see the scatter plot as clusters.
+
+```{r}
+augment(kmeans_fit, new_data = data) %>%
+  ggplot(aes(feature_a, feature_b, color = .pred_cluster)) +
+  geom_point( shape=21) + 
+  ggtitle("Cluster Predictions")
+```
+
+As always, the `predict()` and `augment()` functions are available to us to both extract predicted values and append new values to the datasets.
+
+```{r}
+augment(kmeans_fit, new_data = data)
+```
+
+### Tuning the Cluster Size
+
+The results on our base selection of 3 clusters seems pretty decent. But we still are not certain that it is the best result. We can therefore perform cross validation to determine if the cluster size is appropriate or something better may emerge.
+
+```{r}
+kmeans_spec_tuned <- kmeans_spec %>% set_args(num_clusters = tune()) # set up tuning for clusters
+
+kmeans_wf <- workflow() %>%
+             add_model(kmeans_spec_tuned) %>%
+             add_formula(~.)
+```
+
+```{r}
+set.seed(1234)
+x_boots <- bootstraps(data, times = 10)
+
+num_clusters_grid <- tibble(num_clusters = seq(1, 10))
+
+tune_res <- tune_cluster(
+        object = kmeans_wf,
+        resamples = x_boots,
+        grid = num_clusters_grid
+)
+```
+
+### Gathering Tuning Metrics and Visualizing Cluster Performance
+
+The tuning object returns results of the tuning process against SSE by cluster size selection. We can extract these values from the tuning object with `collect_metric()`. The code below demonstrates this.
+
+```{r}
+tune_res %>% collect_metrics()
+```
+
+We can also plot the results directly into the `autoplot()` function.
+
+```{r}
+tune_res %>% autoplot()
+```
+
+### Extracting the Final Model
+
+It is often the case that the Elbow method is use to pick the number of clusters. Our cross-validation suggests that `cluster=4` performs the best.
+
+```{r}
+final_kmeans <- kmeans_wf %>%
+  update_model(kmeans_spec %>% set_args(num_clusters = 4)) %>%
+  fit(data)
+```
+
+```{r}
+augment(final_kmeans, new_data = data) %>%
+  ggplot(aes(feature_a, feature_b, color = .pred_cluster)) +
+  geom_point(shape = 21) + 
+  ggtitle('Clustering Final Model: Clusters = 4')
+```
+
+## Hierarchical Clustering
+
+The first step in K-Means clustering is the data scientist specifying the number of clusters *K* to partition the observations into. Hierarchical clustering is an alternative approach which does not require the number of clusters to be defined in advance. Furthermore, hierarchical clustering results can be easily visualized using an attractive tree-based representation called a *dendrogram*. Once the dendrogram has been constructed, we slice this structure horizontally to identify the clusters formed.
+
+Hierarchical clustering creates clusters by either a *divisive* method or *agglomerative* method. The `divisive` method is a `top down` approach starting with the entire dataset and then finding partitions in a stepwise manner. `Agglomerative clustering` is a `bottom up` approach. In this lab you will work with agglomerative clustering, commonly referred to as `AGNES` (AGglomerative NESting), which roughly works as follows:
+
+1.  The linkage distances between each of the data points is computed.
+
+2.  Points are clustered pairwise with their nearest neighbor.
+
+3.  Linkage distances between the clusters are computed.
+
+4.  Clusters are combined pairwise into larger clusters.
+
+5.  Steps 3 and 4 are repeated until all data points are in a single cluster.
+
+In the section below, we implement Hierarchical clustering on the dataset using `complete`, `average` and `single` linkage methods.
+
+```{r}
+# linkage method = complete
+res_hclust_complete <- hier_clust(linkage_method = "complete") %>% 
+                       fit(~., data = data)
+
+# linkage method = average
+res_hclust_average <- hier_clust(linkage_method = "average") %>% 
+                      fit(~., data = data)
+
+# linkage method = single
+res_hclust_single <- hier_clust(linkage_method = "single") %>% 
+                      fit(~., data = data)
+```
+
+### Visualizing the Dendogram
+
+One of the nice things about Hierarchical clustering is the output visual, the dendogram which details which cluster and observation belongs to. We can assess the clusters row wise down the dendogram.
+
+```{r fig_1, fig.width=18, fig.height=10 }
+res_hclust_complete %>%
+  extract_fit_engine() %>%
+  fviz_dend(main = "single", k = 6)
+```
+
+```{r fig_2, fig.width=18, fig.height=10 }
+res_hclust_complete %>%
+  extract_fit_engine() %>%
+  fviz_dend(main = "complete", k = 2)
+```
+
+```{r fig_3, fig.width=18, fig.height=10 }
+res_hclust_complete %>%
+  extract_fit_engine() %>%
+  fviz_dend(main = "average", k = 2)
+```
+
+This concludes the session on Clustering.
+
+### Additional References:
+
+1.  <https://learn.microsoft.com/en-gb/shows/learn-live/create-machine-learning-models-with-r-and-tidymodels-ep04-introduction-clustering-models-by-using-r-tidymodels?WT.mc_id=learnlive-20220923A>

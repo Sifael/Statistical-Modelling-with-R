@@ -1,0 +1,418 @@
+---
+title: "Week 2 - Data Preprocessing"
+format: html
+editor: visual
+---
+
+## Week 2 Lab: Data Preprocessing and Transformation
+
+Welcome to the Week 2 Lab Session on Linear Regression. This week, we will delve into data Preprocessing steps and expose you to tools and processes to help you process data in meaningful ways. While we may cover a variety of tools, our focus will remain within the `tidy` ecosystem to give you the consistency of tooling that will allow you to connect ideas and build on the next steps.
+
+The outline of the material will focus on:
+
+**1. Importing Data from Multiple Sources**
+
+1.  Importing files from the Web
+2.  Importing files from html
+3.  Importing Excel Files
+4.  Importing Data from a Database
+
+**2. Data Preprocessing and Tranformation**
+
+1.  Data Transformation - Log and Box-Cox Transformations
+2.  Handling Missing Data
+3.  Data Imputation Techniques
+
+## Importing Data from Multiple Sources
+
+In real-world data science projects, data often comes from multiple sources and formats. Being able to efficiently import and combine data from these various sources is a crucial skill. In this section, we will cover how to import data from common sources such as CSV files, Excel files, databases, and web APIs using the tidyverse and related packages.
+
+<br>
+
+### 1. Reading Data from Weblink
+
+Accessing and importing data directly from a web link is a common task in data science. It allows you to easily access datasets hosted online without having to manually download and save the files. The example below shows how to read a datafile posted from an online link: <https://www.stats.ox.ac.uk/pub/datasets/csb/ch11a.dat>
+
+```{r}
+library(gt)
+
+url = 'https://www.stats.ox.ac.uk/pub/datasets/csb/ch11a.dat'
+data = read.csv(url, sep = ' ')
+
+head(data, n = 10) %>% gt()
+```
+
+### 2. Importing Data from html
+
+To import data from an HTML table, you can use the rvest package, which is part of the tidyverse. The rvest package is designed for web scraping and allows you to extract data from HTML web pages. Here’s how to do it using the example URL provided: <https://www.ssa.gov/oact/babynames/numberUSbirths.html>
+
+```{r}
+library(rvest)
+library(tidyverse)
+
+# URL of the HTML page
+url <- "https://www.ssa.gov/oact/babynames/numberUSbirths.html"
+
+# Read the HTML page
+webpage <- read_html(url)
+
+# Extract the table from the HTML page
+table <- webpage %>%
+  html_node("table") %>%
+  html_table(fill = TRUE)
+
+# Print the extracted data
+head(table, n = 10) %>% gt()
+```
+
+### 3. Importing Data from Excel Sheets
+
+Excel sheets are commonly used for storing and analyzing data, making it essential to know how to import Excel files into R for further analysis and modeling. In this tutorial, we will demonstrate how to read Excel files using the readxl package, part of the tidyverse ecosystem.
+
+Installing and Loading the readxl Package
+
+```{r}
+# installing the readxl package
+#install.packages("readxl")
+
+library(readxl)
+
+sample_xl <- readxl_example('datasets.xlsx')
+data <- read_excel(sample_xl)
+head(data, n = 10) %>% gt()
+```
+
+### Reading Specific Excel Sheets
+
+If your Excel file contains multiple sheets, you can specify which sheet to read by using the sheet parameter:
+
+```{r}
+# reading the first sheet
+excel_data = read_xls('Datasets/sales.xls', sheet = 1)
+
+head(excel_data, n = 5) 
+```
+
+```{r}
+# reading the second sheet
+excel_data = read_xls('Datasets/sales.xls', sheet = 2)
+
+head(excel_data)
+```
+
+## Importing Data from a SQL Database
+
+Accessing data stored in SQL databases is a common requirement for data analysis and modeling. In this tutorial, we will demonstrate how to connect to a SQL database and import data into R using the DBI and RSQLite packages, which are part of the tidyverse ecosystem.
+
+Installing and Loading the Required Packages
+
+```{r}
+#install.packages("DBI")
+#install.packages("RSQLite")
+
+library(DBI)
+library(RSQLite)
+
+# Establish a connection to the SQLite database
+con <- dbConnect(RSQLite::SQLite(), dbname = 'Datasets/chinook.db')
+
+# Print the connection object to verify
+print(con)
+```
+
+### Listing Tables in the Database
+
+You can list all the tables available in the database using the dbListTables function:
+
+```{r}
+# List all tables in the database
+tables <- dbListTables(con)
+
+# Print the list of tables
+tables
+```
+
+### Importing Data from a Specific Table
+
+To import data from a specific table, use the `dbReadTable` function. Note that in the example below, we use the `customers` table as an example.
+
+```{r}
+# retrieve data from a table
+data_table <- dbReadTable(con, 'customers')
+
+# Print the imported data
+head(data_table)
+```
+
+### Executing SQL Queries
+
+Finally, you can also execute custom SQL queries using the `dbGetQuery` function to retrieve specific subsets of data. This gives you the power you'd normaly have on a DBMS and can be run through directly from R. Below is an example that returns `customers` from `Germany`
+
+```{r}
+# Write your SQL query
+query <- "SELECT * FROM customers WHERE Country = 'Germany' "
+
+# Execute the SQL query and import the data
+data_query <- dbGetQuery(con, query)
+
+# Print the imported data from the query
+data_query
+```
+
+We have seen a few ways to import data into an `R` object so that we can perform analysis and modeling. The next step goes a step further to help you develop details combining data sets.
+
+## Data Transformation Techniques for Modelling
+
+As part of developing predictive models, you will often need to think about how to manipulate your data in order to develop a model that provides the best predictive capabilities. These may include heuristic manipulations with missing data, statistical transformation for existing data or even decision around what to keep as features and what to disregard. This section provides an overview of these transformations.
+
+### Log Transformation
+
+Log Transformation is a effective transformation typically applied on variables with large scales such as prices of a home. The fundamental idea, particularly in regression, of using the Log Transformation is to convert the data from its original distribution to a normal distribution by dealing with skews. This is of course important for linear regression which has assumptions about errors.
+
+Let's look at an example using the Ames Housing Dataset
+
+```{r}
+# loading data processing and visualization theme
+library(tidyverse)
+library(ggthemr)
+library(gt)
+
+# loading a visualization them
+ggthemr('fresh')
+```
+
+```{r}
+ames <- as_tibble(read.csv("Datasets/ames.csv"))
+head(ames, n = 10) %>% gt()
+```
+
+Let's visualize the response variable: `Sale_Price`
+
+```{r}
+options(repr.plot.width = 14, repr.plot.height = 10, repr.plot.res = 100)
+
+ames %>%
+  ggplot(., aes(x = price)) +
+  geom_histogram( color = 'black', bins = 30 ) +
+  ggtitle("Distribution of Sale Price")
+```
+
+What do we notice about the distribution?
+
+1.  Is there a skew in the distribution? Yes, we see a right skew in the distribution.
+2.  Why is this an interesting observation? Well, if we intend to use linear regression, there is an implicit assumption that the errors are normally distributed and therefore, there is an expectation that the response variable is also normally distributed.
+3.  What can we do? Let's try a log transformation.
+
+```{r}
+ames %>%
+  ggplot(., aes(x = log(price))) +
+  geom_histogram( color = 'black', bins = 30 ) +
+  ggtitle("Distribution of Log Sale Price")
+```
+
+We notice that the data is much closer to a normal distribution now however, we see that the log transformation has introduced a left skew.
+
+## Box-Cox Transformation
+
+Another alternative is the Box-Cox Transformation which aims to achieve similar results as the log transformation but converting the data into a normal distribution. The Box-Cox transformation is particularly useful with non-normal data. The formal definition is given as:
+
+\$\$ Y(\lambda) =
+
+\begin{cases}
+\frac{Y^\lambda - 1}{\lambda} & \text{if } \lambda \neq 0 \\
+\ln(Y) & \text{if } \lambda = 0
+\end{cases}
+
+\$\$
+
+where $\lambda$ is a parameter that is estimated from the data, determining the exact nature of the transformation. The Box-Cox transformation adjusts the data such that it approximates a normal distribution, which is beneficial for many statistical modeling techniques that assume normality of the input data.
+
+Let's see how to implement it. We first compute the lambda parameter and transform the variable with the function above.
+
+```{r}
+library(forecast)
+
+# computing the lambda parameter
+boxcox_lambda <- BoxCox.lambda(ames$price)
+boxcox_lambda
+```
+
+```{r}
+ames %>%
+  ggplot(., aes(x = BoxCox(price, boxcox_lambda))) +
+  geom_histogram( color = 'black', bins = 30 ) +
+  ggtitle("Distribution of Box-Cox Sale Price")
+```
+
+## Missing Values
+
+A common and crucial preprocessing step in data analytics is dealing with missing values. These gaps in the data can arise due to various reasons, such as technical glitches or human errors during data collection. Addressing the missing value problem involves making decisions that balance acquiring useful information from incomplete observations and potentially introducing bias into the dataset. Properly handling missing values ensures the integrity and reliability of the analysis, helping to draw accurate and meaningful insights.
+
+First, here is how we may be able to identify missing data
+
+```{r}
+sum(is.na(ames))
+```
+
+```{r}
+ames %>% summarise_all(~sum(is.na(.))) %>% glimpse()
+```
+
+We can also visualize missing values at the feature/column level. A package `visdat` has a useful feature to put missing values by feature into context.
+
+```{r}
+library(visdat)
+
+vis_miss(ames, cluster = TRUE)
+```
+
+## Recipes and Data Imputation
+
+There are many ways to deal with missing data. In some cases, it may be reasonable to do away completely with missing observations. In many cases, imputing techniques can greatly enrich the dataset, preserving a proportion of the data that would otherwise not be regarded.
+
+In this section, we explore a few techniques that can provide imputing facilities. But before we do that, we briefly have to introduce `recipes`.
+
+## Tidy Recipes
+
+The `recipes` library is part of the \`tidyverse\` ecosystem, providing various preprocessing functions that integrate seamlessly with the modeling facilities available within the `tidymodels` framework. Since these labs focus heavily on `tidymodels`, it is useful to provide a brief introduction here. In the next lab, we will introduce modeling with \`tidymodels\` more comprehensively. For more details, visit [recipes.tidymodels.org](%5Bhttps://recipes.tidymodels.org/index.html).\](<https://recipes.tidymodels.org/index.html>).)
+
+To demonstrate the range of imputation techniques available in \`recipes\`, see the list below.
+
+```{r}
+library(recipes)
+
+grep("impute_", ls("package:recipes"), value = TRUE)
+```
+
+## Step 1: Defining a Recipe
+
+In order to use recipes to perform imputation, we must first define the recipe. The most straight forward way to achieve this is using the formula method.
+
+```{r}
+ames_recipe <- recipe(price ~ ., data = ames)
+```
+
+Once we have the recipe defined, imputation is as easy as adding the specific step to the recipe.
+
+### Median Imputing
+
+In the example below, we can impute using median value for missing value of a column. To do this, we simply add the function `step_impute_median()` to the recipe. The example below uses the variable `Lot.Frontage`
+
+```{r}
+ames_recipe %>% step_impute_median(Lot.Frontage )
+```
+
+### K-Nearest Neighbor Imputation
+
+The K-nearest neighbor imputation is another effective impute function that can work for both numeric and non-numeric predictions. To apply this on all predictors, you can simply add `all_predictors` to the `step_impute_knn()` method.
+
+```{r}
+ames_recipe %>% step_impute_knn( Garage.Yr.Blt, neighbors = 5 )
+```
+
+Many More imputation methods exist and you may wish to explore them.
+
+## Step 2: Prep and Bake
+
+Notice that the above imputation techniques only define the model or technique for imputation. In order to perform the imputation itself, we need two steps: `prep` and `bake`.
+
+The prep step estimates the parameters necessary for imputation and the bake function implements the imputation.
+
+```{r}
+sample_recipe <- recipe(price ~ ., data = ames) %>% 
+                   step_impute_median( Lot.Frontage ) 
+                   
+impute_rec <- prep(sample_recipe, training = ames)
+
+imputed_data <- bake(impute_rec, new_data = ames)
+
+vis_miss(imputed_data, cluster = TRUE)
+```
+
+## Zero and Near Zero Variance Variables
+
+Zero and Near Zero variance variables often pose a simple yet important preprocessing challenge because their limited variability typically translates into diminished predictive power. Consequently, these features can usually be removed from the dataset without compromising model performance. In fact, retaining them can sometimes lead to overfitting, as models become overly reliant on specific values or categories. For instance, zero-variance variables are essentially constant throughout the data, while near-zero variance variables tend to cluster around a single value.
+
+The code below will show you how to identify these variables and consequently exclude them from your dataset.
+
+```{r}
+nzv_recipe <- recipe(price ~ ., data = ames) %>% step_nzv( all_predictors())
+
+nzv_impute <- prep(nzv_recipe, ames)
+
+filtered_ames <- bake(nzv_impute, ames)
+
+dim(filtered_ames); dim(ames);
+
+```
+
+Notice that we have now moved from 82 columns to 61 columns.
+
+## Normalization
+
+In data preprocessing, normalization turns that dataset into the range between $0$ and $1$. This is achieved by subtracting the values of each observation by the minimun of the variable and scaling it by the range. Mathematically, this means:
+
+$$ x_n = \frac {x - x_{min}} {x_{max} - X_{min} } $$
+
+The implementation of this on recipes uses the function `step_range()`
+
+```{r}
+normalize <- recipe( price ~., data = ames) %>%
+                step_range(Lot.Frontage, Lot.Area)
+
+normalize_impute <- prep(normalize, ames)
+
+normalized_data <- bake(normalize_impute,new_data = ames)
+
+normalized_data %>% slice_head(n = 10)
+```
+
+## Standardization
+
+Standardization is a common data preprocessing technique used to transform variables to a common scale, making them more comparable and easier to interpret in statistical analyses. A typical standardization procedure aims to tranform the features into values with zero mean and constant variable. Specifically, this means using the formular:
+
+$$ x_n = \frac {x - \mu}{\sigma} $$
+
+where the $x_n$ is the standardized value.
+
+The implementation of this using recipes can be seen below:
+
+```{r}
+standard_recipe <- recipe( price ~. , data = ames) %>%
+                    step_center( all_numeric(), -all_outcomes())  %>% # get mean for all numeric predictors
+                    step_scale( all_numeric(), -all_outcomes())
+
+standard_impute <- prep(standard_recipe, ames)
+
+standardized_data <- bake(standard_impute, new_data = ames)
+
+standardized_data %>% slice_head(n = 10)
+```
+
+## Yeo-Johnson Transformation
+
+The Yeo-Johnson transformation is a statistical method used to transform continuous variables to make them more normally distributed. It's an extension of the Box-Cox transformation that can handle both positive and negative values, making it more versatile
+
+The code below implements how we can generate a Yeo-Johnson Transformation. For this case, we simply apply it to all numeric data.
+
+```{r}
+yeo_johnson_recipe <- recipe(price ~ ., data = ames) %>%
+                        step_YeoJohnson( all_numeric_predictors() )
+
+yeo_johnson_impute <- prep(yeo_johnson_recipe, ames)
+
+transformed_data <- bake(yeo_johnson_impute, new_data = ames)
+```
+
+```{r}
+transformed_data %>% head()
+```
+
+As we did with the Box-Cox, the transformation will determine the best parameter and convert the data into a more normally distributed variable for all numerical variables present.
+
+While we have not exhausted everything, this now concludes our session on data preprocessing. In the next sections, we will cover items including dealing with dummy variable.
+
+### References:
+
+1.  <https://www.tidymodels.org/start/recipes/>
+2.  <https://recipes.tidymodels.org>

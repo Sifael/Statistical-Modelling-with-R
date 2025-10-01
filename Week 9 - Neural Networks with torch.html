@@ -1,0 +1,2021 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.5.57">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Week 9 - Neural Networks</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="Week 9 - Neural Networks with torch_files/libs/clipboard/clipboard.min.js"></script>
+<script src="Week 9 - Neural Networks with torch_files/libs/quarto-html/quarto.js"></script>
+<script src="Week 9 - Neural Networks with torch_files/libs/quarto-html/popper.min.js"></script>
+<script src="Week 9 - Neural Networks with torch_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="Week 9 - Neural Networks with torch_files/libs/quarto-html/anchor.min.js"></script>
+<link href="Week 9 - Neural Networks with torch_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="Week 9 - Neural Networks with torch_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="Week 9 - Neural Networks with torch_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="Week 9 - Neural Networks with torch_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="Week 9 - Neural Networks with torch_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="fullcontent">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Week 9 - Neural Networks</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="neural-networks-with-r-torch" class="level2">
+<h2 class="anchored" data-anchor-id="neural-networks-with-r-torch">Neural Networks with R Torch</h2>
+<p>In this session, we’ll dive into the fundamentals of neural networks, exploring how these models work and how they can be applied to complex data analytics tasks. Neural networks have transformed the field of machine learning, allowing us to uncover patterns and make predictions in ways that traditional models cannot.</p>
+<p>This tutorial will focus on building, training, and evaluating a simple neural network in R, using the&nbsp;<strong>torch</strong>&nbsp;package.&nbsp;<strong>torch</strong>is a powerful and flexible package for deep learning, and it allows us to implement neural networks in R with ease. By the end of this tutorial, you will have hands-on experience creating a neural network from scratch, training it with real data, and evaluating its performance.</p>
+</section>
+<section id="lab-outline" class="level2">
+<h2 class="anchored" data-anchor-id="lab-outline">Lab Outline</h2>
+<ul>
+<li>Introduction to the torch Package in R
+<ul>
+<li><p>Installation and setting up torch in R</p></li>
+<li><p>Core concepts in Torch: Tensors, Autograd, Device, and Modules</p></li>
+</ul></li>
+</ul>
+<!-- -->
+<ul>
+<li><p>Components of a Neural Network</p>
+<ul>
+<li>Understanding and defining the structure of the neural network in R</li>
+<li>Defining components of the model: Loss Function, Optimizer, Activation Function, Architecture</li>
+</ul></li>
+<li><p>Implementing a Neural Network on Sample Data</p>
+<ul>
+<li><p>Building a Neural Network from Scratch</p></li>
+<li><p>Understanding Infrastructure of the Neural Network - Layers and Activation Functions</p></li>
+<li><p>Training and Testing through Epochs - <code>model$eval</code> and <code>model$train</code></p></li>
+</ul></li>
+</ul>
+<section id="lets-begin" class="level3">
+<h3 class="anchored" data-anchor-id="lets-begin">Let’s Begin!</h3>
+<p>Before diving into neural networks, let’s make sure we have all the necessary packages installed and set up. The&nbsp;<strong>torch</strong>package is the primary tool we’ll use to build and train our neural networks in R, and&nbsp;<strong>torchvision</strong>&nbsp;provides additional utilities for working with image data. The&nbsp;<strong>luz</strong>&nbsp;package adds useful high-level abstractions for managing models, such as training loops, making it easier to work with neural networks in&nbsp;<strong>torch</strong>.</p>
+<section id="installation-notes" class="level4">
+<h4 class="anchored" data-anchor-id="installation-notes">Installation Notes</h4>
+<ol type="1">
+<li><strong>torch</strong>: The core deep learning library for R, allowing us to define and train neural networks with GPU support.</li>
+<li><strong>torchvision</strong>: Provides utilities for loading and processing image data, plus pre-trained models for computer vision tasks (optional but helpful if you plan to work with image data).</li>
+<li><strong>luz</strong>: Simplifies model training with higher-level abstractions, including automated training loops, validation, and hyperparameter tuning.</li>
+</ol>
+<p>Uncomment the installation commands below if you haven’t already installed these packages.&nbsp;<strong>Note:</strong>&nbsp;Some of these packages may require additional dependencies. Make sure your R environment is up to date.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># installing the packages</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co"># install.packages(c("torch", "torchvision", "luz"))</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co"># devtools::install_github("mlverse/torch")</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># devtools::install_github("mlverse/torchvision")</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+</section>
+<section id="core-concepts-in-torch" class="level3">
+<h3 class="anchored" data-anchor-id="core-concepts-in-torch">Core Concepts in Torch</h3>
+<p>To effectively work with neural networks in R using the&nbsp;<strong>torch</strong>&nbsp;package, it’s essential to understand some core concepts:&nbsp;<strong>Tensors</strong>,&nbsp;<strong>Modules</strong>, and&nbsp;<strong>Autograd</strong>. These components provide the foundational tools for creating and training neural networks, handling data, and calculating gradients.</p>
+</section>
+<section id="tensors" class="level3">
+<h3 class="anchored" data-anchor-id="tensors">1. <strong>Tensors</strong></h3>
+<p>Tensors are the primary data structure in&nbsp;<strong>torch</strong>. They are multi-dimensional arrays (similar to matrices) and serve as the basic building block for neural networks. Tensors can hold data of various types (integers, floats, etc.) and can be one-dimensional (vectors), two-dimensional (matrices), or higher-dimensional.</p>
+<p>Here’s a quick example to create and manipulate tensors in&nbsp;<strong>torch</strong>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(torch)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(torchvision)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(coro)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(luz)</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a 1D tensor</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>tensor_1d <span class="ot">&lt;-</span> <span class="fu">torch_tensor</span>(<span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span>))</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(tensor_1d)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>torch_tensor
+ 1
+ 2
+ 3
+ 4
+ 5
+[ CPUFloatType{5} ]</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a 2D tensor (matrix)</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>tensor_2d <span class="ot">&lt;-</span> <span class="fu">torch_tensor</span>(<span class="fu">matrix</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">9</span>, <span class="at">nrow =</span> <span class="dv">3</span>, <span class="at">ncol =</span> <span class="dv">3</span>))</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(tensor_2d)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>torch_tensor
+ 1  4  7
+ 2  5  8
+ 3  6  9
+[ CPULongType{3,3} ]</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Tensor operations (e.g., addition)</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>tensor_sum <span class="ot">&lt;-</span> tensor_1d <span class="sc">+</span> tensor_1d</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(tensor_sum)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>torch_tensor
+  2
+  4
+  6
+  8
+ 10
+[ CPUFloatType{5} ]</code></pre>
+</div>
+</div>
+</section>
+<section id="autograd" class="level3">
+<h3 class="anchored" data-anchor-id="autograd">2. <strong>Autograd</strong></h3>
+<p><strong><code>Autograd</code></strong>&nbsp;is the automatic differentiation engine in&nbsp;<strong>torch</strong>. It allows&nbsp;<strong>torch</strong>&nbsp;to automatically compute gradients, which are used for optimizing model parameters during training. Gradients tell us how to adjust the model weights to minimize the loss.</p>
+<p>Here’s an example of using <code>autograd</code> to calculate gradients for a simple tensor operation.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a tensor with requires_grad = TRUE to enable gradient computation</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fu">torch_tensor</span>(<span class="dv">2</span>, <span class="at">requires_grad =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>y <span class="ot">&lt;-</span> x<span class="sc">^</span><span class="dv">2</span> <span class="sc">+</span> <span class="dv">3</span> <span class="sc">*</span> x <span class="sc">+</span> <span class="dv">1</span>  <span class="co"># Some arbitrary operation on x</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Perform backpropagation to compute gradients</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>y<span class="sc">$</span><span class="fu">backward</span>()</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Print the gradient of x</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(x<span class="sc">$</span>grad)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>torch_tensor
+ 7
+[ CPUFloatType{1} ]</code></pre>
+</div>
+</div>
+<p>In this example,&nbsp;<strong>torch</strong>&nbsp;automatically calculates the gradient of&nbsp;<code>y</code>&nbsp;with respect to&nbsp;<code>x</code>. The gradient (∂y/∂x) is stored in&nbsp;<code>x$grad</code>, and can be used for model optimization.</p>
+<section id="autograd-documentation" class="level4">
+<h4 class="anchored" data-anchor-id="autograd-documentation"><code>Autograd</code> Documentation</h4>
+<ul>
+<li><strong><code>requires_grad</code></strong>: When set to&nbsp;<code>TRUE</code>, enables gradient calculation for a tensor.</li>
+<li><strong><code>backward</code></strong>: Computes the gradient of a tensor (often used for the loss function).</li>
+<li><strong><code>x$grad</code></strong>: Accesses the gradient of&nbsp;<code>x</code>&nbsp;after&nbsp;<code>backward</code>&nbsp;is called.</li>
+</ul>
+</section>
+</section>
+<section id="device" class="level3">
+<h3 class="anchored" data-anchor-id="device">3. Device</h3>
+<p>In deep learning, computational efficiency is crucial, especially when working with large <code>datasets</code> or complex models.&nbsp;<strong>torch</strong>&nbsp;allows us to run computations on either the&nbsp;<strong>CPU</strong>&nbsp;or the&nbsp;<strong>GPU</strong>. Using a GPU can significantly accelerate training by allowing parallel processing, particularly when working with large neural networks or <code>datasets</code>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">torch_randn</span>(<span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>torch_tensor
+(1,.,.) = 
+ -1.4082  1.0943  1.5524  1.6994
+  0.8781 -0.0396  0.4149  0.2172
+  1.4362  1.5739  0.5227  2.3711
+
+(2,.,.) = 
+ -1.5570 -1.7442 -0.4380  0.4320
+  0.3782 -0.0957 -0.9765 -0.5102
+ -1.0264 -0.4809 -1.0060  1.6312
+[ CPUFloatType{2,3,4} ]</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Check if CUDA (GPU) is available</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>device <span class="ot">&lt;-</span> <span class="cf">if</span> (<span class="fu">cuda_is_available</span>()) <span class="fu">torch_device</span>(<span class="st">"cuda"</span>) <span class="cf">else</span> <span class="fu">torch_device</span>(<span class="st">"cpu"</span>)</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(device)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>torch_device(type='cpu') </code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>sample_tensor <span class="ot">&lt;-</span> <span class="fu">torch_rand</span>(<span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>, <span class="at">device =</span> device)</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>sample_tensor</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>torch_tensor
+(1,.,.) = 
+  0.8758  0.9232  0.1077  0.1153
+  0.6822  0.9454  0.8639  0.9898
+  0.9322  0.7548  0.8042  0.8514
+
+(2,.,.) = 
+  0.9642  0.3563  0.2121  0.5124
+  0.4680  0.2917  0.6064  0.7976
+  0.2352  0.4691  0.1579  0.2296
+[ CPUFloatType{2,3,4} ]</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="building-a-neural-network" class="level2">
+<h2 class="anchored" data-anchor-id="building-a-neural-network">Building a Neural Network</h2>
+<p>Building a neural network from scratch in&nbsp;<strong>torch</strong>&nbsp;involves defining the network architecture, creating a forward pass function, and initializing the network parameters. Here, we’ll build a simple neural network with one hidden layer to illustrate the core steps involved in model creation.</p>
+<section id="step-1-define-the-neural-network-architecture" class="level4">
+<h4 class="anchored" data-anchor-id="step-1-define-the-neural-network-architecture">Step 1: Define the Neural Network Architecture</h4>
+<p>The first step is to define the structure of the neural network. We use&nbsp;<code>nn_module</code>&nbsp;to create a custom model class, specifying the layers we want to include and the forward pass through the network.</p>
+<p>In this example, we’ll create a neural network with an input layer, one hidden layer, and an output layer.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Define the custom neural network</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>net <span class="ot">&lt;-</span> <span class="fu">nn_module</span>(</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">"SimpleNet"</span>,</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">initialize =</span> <span class="cf">function</span>(input_size, hidden_size, output_size) {</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>    self<span class="sc">$</span>fc1 <span class="ot">&lt;-</span> <span class="fu">nn_linear</span>(input_size, hidden_size)  <span class="co"># Input layer to hidden layer</span></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>    self<span class="sc">$</span>fc2 <span class="ot">&lt;-</span> <span class="fu">nn_linear</span>(hidden_size, output_size) <span class="co"># Hidden layer to output layer</span></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>  },</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">forward =</span> <span class="cf">function</span>(x) {</span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Forward pass: input through layers</span></span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>    x <span class="ot">&lt;-</span> <span class="fu">torch_relu</span>(self<span class="sc">$</span><span class="fu">fc1</span>(x)) <span class="co"># Apply ReLU activation on the hidden layer</span></span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>    x <span class="ot">&lt;-</span> self<span class="sc">$</span><span class="fu">fc2</span>(x)             <span class="co"># Output layer (no activation here for regression tasks)</span></span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span>(x)</span>
+<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-18"><a href="#cb16-18" aria-hidden="true" tabindex="-1"></a>input_size <span class="ot">&lt;-</span> <span class="dv">3</span>     <span class="co"># 3 input features</span></span>
+<span id="cb16-19"><a href="#cb16-19" aria-hidden="true" tabindex="-1"></a>hidden_size <span class="ot">&lt;-</span> <span class="dv">5</span>    <span class="co"># 5 neurons in the hidden layer</span></span>
+<span id="cb16-20"><a href="#cb16-20" aria-hidden="true" tabindex="-1"></a>output_size <span class="ot">&lt;-</span> <span class="dv">1</span>    <span class="co"># 1 output for a regression task</span></span>
+<span id="cb16-21"><a href="#cb16-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-22"><a href="#cb16-22" aria-hidden="true" tabindex="-1"></a>model <span class="ot">&lt;-</span> <span class="fu">net</span>(input_size, hidden_size, output_size)</span>
+<span id="cb16-23"><a href="#cb16-23" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(model)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>An `nn_module` containing 26 parameters.
+
+── Modules ─────────────────────────────────────────────────────────────────────
+• fc1: &lt;nn_linear&gt; #20 parameters
+• fc2: &lt;nn_linear&gt; #6 parameters</code></pre>
+</div>
+</div>
+</section>
+<section id="step-2-choose-activation-functions" class="level4">
+<h4 class="anchored" data-anchor-id="step-2-choose-activation-functions">Step 2: Choose Activation Functions</h4>
+<p>The activation function is a crucial part of the forward pass, adding non-linearity to the network. Here, we use the&nbsp;<strong>ReLU (Rectified Linear Unit)</strong>&nbsp;activation function, commonly used in hidden layers due to its simplicity and effectiveness.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>x <span class="ot">=</span> <span class="fu">seq</span>( <span class="at">from=</span><span class="sc">-</span><span class="dv">5</span>, <span class="at">to=</span><span class="dv">5</span>, <span class="at">length.out =</span> <span class="dv">20</span> )</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>y <span class="ot">&lt;-</span> <span class="fu">torch_relu</span>(x)</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a><span class="co"># plotting the RELU Activation Function</span></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(x, y)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Week-9---Neural-Networks-with-torch_files/figure-html/unnamed-chunk-8-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The output layer typically doesn’t have an activation function for regression tasks, while a softmax or sigmoid activation might be used for classification tasks.</p>
+</section>
+<section id="step-3-loss-functions" class="level3">
+<h3 class="anchored" data-anchor-id="step-3-loss-functions">Step 3: Loss Functions</h3>
+<p>In a neural network, the&nbsp;<strong>loss function</strong>&nbsp;measures the difference between the model’s predictions and the actual target values. For regression tasks, where the goal is to predict continuous values, a common choice for the loss function is&nbsp;<strong>Mean Squared Error (MSE)</strong>. This function calculates the average squared difference between the predicted and actual values, penalizing larger errors more heavily.</p>
+<section id="setting-up-the-loss-function" class="level4">
+<h4 class="anchored" data-anchor-id="setting-up-the-loss-function">Setting Up the Loss Function</h4>
+<p>Once the model is defined, we can initialize the loss function. For regression tasks, the MSE loss function is commonly used due to its effectiveness in measuring prediction accuracy for continuous values.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>loss_fn <span class="ot">&lt;-</span> <span class="fu">nn_mse_loss</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Example batch of predictions (output of model) and true targets</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>predictions <span class="ot">&lt;-</span> <span class="fu">torch_tensor</span>(<span class="fu">c</span>(<span class="fl">2.5</span>, <span class="fl">0.0</span>, <span class="fl">2.1</span>, <span class="fl">1.7</span>))</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>targets <span class="ot">&lt;-</span> <span class="fu">torch_tensor</span>(<span class="fu">c</span>(<span class="fl">3.0</span>, <span class="sc">-</span><span class="fl">0.5</span>, <span class="fl">2.0</span>, <span class="fl">1.0</span>))</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Compute loss</span></span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>loss <span class="ot">&lt;-</span> <span class="fu">loss_fn</span>(predictions, targets)</span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(loss<span class="sc">$</span><span class="fu">item</span>())  <span class="co"># Extracts the numeric value of the loss</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.25</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="step-4-optimizer" class="level3">
+<h3 class="anchored" data-anchor-id="step-4-optimizer">Step 4: Optimizer</h3>
+<p>After defining a neural network and a loss function, the next essential component in training a model is the&nbsp;<strong>optimizer</strong>. An optimizer adjusts the model’s parameters based on the calculated gradients to minimize the loss function over time. For this tutorial, we’ll use the&nbsp;<strong>Adam</strong>&nbsp;optimizer, a popular choice in neural networks because of its efficiency and adaptive learning rate capabilities.</p>
+<p>The&nbsp;<strong>Adam</strong>&nbsp;(Adaptive Moment Estimation) optimizer combines the benefits of two other optimizers—<strong>momentum</strong>&nbsp;and&nbsp;<strong>RMSProp</strong>. It adapts the learning rate for each parameter individually based on the first and second moments of the gradients, making it highly effective for a wide range of tasks.</p>
+<section id="setting-up-the-adam-optimizer" class="level4">
+<h4 class="anchored" data-anchor-id="setting-up-the-adam-optimizer">Setting Up the Adam Optimizer</h4>
+<p>In&nbsp;<strong>torch</strong>, we initialize the Adam optimizer using&nbsp;<code>optim_adam</code>. This optimizer requires specifying the model parameters and an initial learning rate.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Initialize the Adam optimizer</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>learning_rate <span class="ot">&lt;-</span> <span class="fl">0.001</span></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>optimizer <span class="ot">&lt;-</span> <span class="fu">optim_adam</span>(model<span class="sc">$</span>parameters, <span class="at">lr =</span> learning_rate)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>We now have the complete set of attribute to construct a neural network. In the next section, we discuss the <code>Dataset</code> and <code>DataLoaders</code></p>
+</section>
+</section>
+</section>
+<section id="dataset-and-dataloader" class="level2">
+<h2 class="anchored" data-anchor-id="dataset-and-dataloader">Dataset and DataLoader</h2>
+<p>To train a neural network effectively, it’s crucial to manage data efficiently.&nbsp;<strong>torch</strong>&nbsp;provides&nbsp;<strong>Dataset</strong>&nbsp;and&nbsp;<strong>DataLoader</strong>classes to streamline data handling, making it easy to work with mini-batches, shuffle data, and perform other preprocessing steps. This is especially helpful when dealing with large datasets, as it allows for more efficient memory and computational management.</p>
+<section id="dataset-class" class="level4">
+<h4 class="anchored" data-anchor-id="dataset-class">1. Dataset Class</h4>
+<p>The <strong><code>Dataset</code></strong> class in&nbsp;<strong>torch</strong>&nbsp;allows us to create a custom data structure that can load and preprocess data. By defining a custom dataset, we can organize data, apply transformations, and define how to access samples within the dataset.</p>
+<p>Here’s an example of creating a simple custom <code>dataset</code> in R for training. We’ll use a basic data structure with <code>length</code> and <code>getitem</code> methods, which define the number of data points and how to access individual samples, respectively.</p>
+<ul>
+<li><strong><code>initialize</code></strong>: Initializes the <code>dataset</code> with features and labels.</li>
+<li><strong><code>.getitem</code></strong>: Defines how to access individual samples by index, returning a list containing the feature and label for that index</li>
+<li><strong><code>.length</code></strong>: Returns the total number of samples in the <code>dataset</code>.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Define a custom dataset</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>MyDataset <span class="ot">&lt;-</span> <span class="fu">dataset</span>(</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">initialize =</span> <span class="cf">function</span>(features, labels) {</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>    self<span class="sc">$</span>features <span class="ot">&lt;-</span> features</span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>    self<span class="sc">$</span>labels <span class="ot">&lt;-</span> labels</span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>  },</span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">.getitem =</span> <span class="cf">function</span>(index) {</span>
+<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a>    x <span class="ot">&lt;-</span> self<span class="sc">$</span>features[index, ]</span>
+<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a>    y <span class="ot">&lt;-</span> self<span class="sc">$</span>labels[index]</span>
+<span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a>    <span class="fu">list</span>(<span class="at">x =</span> x, <span class="at">y =</span> y)</span>
+<span id="cb23-12"><a href="#cb23-12" aria-hidden="true" tabindex="-1"></a>  },</span>
+<span id="cb23-13"><a href="#cb23-13" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb23-14"><a href="#cb23-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">.length =</span> <span class="cf">function</span>() {</span>
+<span id="cb23-15"><a href="#cb23-15" aria-hidden="true" tabindex="-1"></a>    self<span class="sc">$</span>features<span class="sc">$</span><span class="fu">size</span>(<span class="dv">1</span>)</span>
+<span id="cb23-16"><a href="#cb23-16" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb23-17"><a href="#cb23-17" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb23-18"><a href="#cb23-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-19"><a href="#cb23-19" aria-hidden="true" tabindex="-1"></a><span class="co"># Sample data</span></span>
+<span id="cb23-20"><a href="#cb23-20" aria-hidden="true" tabindex="-1"></a>features <span class="ot">&lt;-</span> <span class="fu">torch_tensor</span>(<span class="fu">matrix</span>(<span class="fu">runif</span>(<span class="dv">100</span>), <span class="at">nrow =</span> <span class="dv">20</span>, <span class="at">ncol =</span> <span class="dv">5</span>)) <span class="co"># 20 samples, 5 features each</span></span>
+<span id="cb23-21"><a href="#cb23-21" aria-hidden="true" tabindex="-1"></a>labels <span class="ot">&lt;-</span> <span class="fu">torch_tensor</span>(<span class="fu">runif</span>(<span class="dv">20</span>))       <span class="co"># 20 labels</span></span>
+<span id="cb23-22"><a href="#cb23-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-23"><a href="#cb23-23" aria-hidden="true" tabindex="-1"></a><span class="co"># Initialize the dataset</span></span>
+<span id="cb23-24"><a href="#cb23-24" aria-hidden="true" tabindex="-1"></a>dataset <span class="ot">&lt;-</span> <span class="fu">MyDataset</span>(features, labels)</span>
+<span id="cb23-25"><a href="#cb23-25" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(dataset<span class="sc">$</span><span class="fu">.getitem</span>(<span class="dv">1</span>))               <span class="co"># Access the first sample</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$x
+torch_tensor
+ 0.5284
+ 0.8462
+ 0.1210
+ 0.9040
+ 0.5410
+[ CPUFloatType{5} ]
+
+$y
+torch_tensor
+0.416245
+[ CPUFloatType{} ]</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(dataset<span class="sc">$</span><span class="fu">.length</span>())                 <span class="co"># Number of samples in the dataset</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 20</code></pre>
+</div>
+</div>
+</section>
+<section id="dataloader-class" class="level4">
+<h4 class="anchored" data-anchor-id="dataloader-class">2. <code>DataLoader</code> Class</h4>
+<p>The&nbsp;<strong><code>DataLoader</code></strong>&nbsp;class is essential for feeding data into the model in manageable batches, a crucial step for efficient neural network training. The <code>DataLoader</code> automatically handles batch creation, data shuffling, and parallel loading if necessary.</p>
+<p>To create a <code>DataLoader</code>, specify the <code>dataset</code>, batch size, and whether to shuffle the data.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a DataLoader</span></span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>batch_size <span class="ot">&lt;-</span> <span class="dv">4</span></span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>data_loader <span class="ot">&lt;-</span> <span class="fu">dataloader</span>(dataset, <span class="at">batch_size =</span> batch_size, <span class="at">shuffle =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>coro<span class="sc">::</span><span class="fu">loop</span>( <span class="cf">for</span> (batch <span class="cf">in</span> data_loader) { <span class="fu">print</span>(batch); } )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$x
+torch_tensor
+ 0.9039  0.3047  0.6380  0.8486  0.9555
+ 0.7104  0.5792  0.5603  0.9521  0.6233
+ 0.2827  0.9838  0.9034  0.1989  0.9155
+ 0.6081  0.6262  0.1689  0.8254  0.1088
+[ CPUFloatType{4,5} ]
+
+$y
+torch_tensor
+ 0.6545
+ 0.0109
+ 0.1857
+ 0.7605
+[ CPUFloatType{4} ]
+
+$x
+torch_tensor
+ 0.0803  0.5242  0.2588  0.7252  0.4779
+ 0.3937  0.0959  0.5338  0.1321  0.8438
+ 0.3827  0.8093  0.0691  0.1592  0.5338
+ 0.6676  0.8481  0.8779  0.4351  0.2642
+[ CPUFloatType{4,5} ]
+
+$y
+torch_tensor
+ 0.2206
+ 0.3441
+ 0.0510
+ 0.9560
+[ CPUFloatType{4} ]
+
+$x
+torch_tensor
+ 0.3467  0.8215  0.6788  0.2833  0.8915
+ 0.1870  0.8318  0.7562  0.3080  0.7404
+ 0.6337  0.0778  0.8152  0.8676  0.7667
+ 0.7038  0.8596  0.3530  0.4169  0.4198
+[ CPUFloatType{4,5} ]
+
+$y
+torch_tensor
+ 0.9072
+ 0.5976
+ 0.2865
+ 0.1795
+[ CPUFloatType{4} ]
+
+$x
+torch_tensor
+ 0.5284  0.8462  0.1210  0.9040  0.5410
+ 0.8763  0.2121  0.1331  0.9432  0.9429
+ 0.4516  0.4753  0.4540  0.4910  0.2510
+ 0.1888  0.8812  0.6964  0.7778  0.3690
+[ CPUFloatType{4,5} ]
+
+$y
+torch_tensor
+ 0.4162
+ 0.0914
+ 0.9085
+ 0.4643
+[ CPUFloatType{4} ]
+
+$x
+torch_tensor
+ 0.0564  0.7970  0.8739  0.0560  0.1535
+ 0.7992  0.1727  0.8936  0.9071  0.7694
+ 0.0951  0.1082  0.0140  0.4010  0.2009
+ 0.7839  0.2436  0.2165  0.1800  0.6381
+[ CPUFloatType{4,5} ]
+
+$y
+torch_tensor
+ 0.8642
+ 0.0011
+ 0.0120
+ 0.7403
+[ CPUFloatType{4} ]</code></pre>
+</div>
+</div>
+</section>
+<section id="putting-it-all-together-end-to-end-neural-network-training" class="level3">
+<h3 class="anchored" data-anchor-id="putting-it-all-together-end-to-end-neural-network-training">Putting It All Together: End-to-End Neural Network Training</h3>
+<p>Now that we’ve covered the individual components—data preparation, model definition, training and validation functions, loss function, and optimizer—let’s combine everything into a full end-to-end neural network training workflow. This final code snippet brings together data loading, model training, validation, and performance monitoring over multiple epochs.</p>
+<section id="complete-code-for-training-a-neural-network" class="level4">
+<h4 class="anchored" data-anchor-id="complete-code-for-training-a-neural-network">Complete Code for Training a Neural Network</h4>
+<p>The first part of the code defines a simple 3-layer network with an input, hidden and output layer. We also generate a sample data set fit for a regression model. We also created a <code>dataset</code> and <code>dataloader</code>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="co"># dimensionality of hidden layer</span></span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>d_in <span class="ot">&lt;-</span> <span class="dv">3</span></span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>d_hidden <span class="ot">&lt;-</span> <span class="dv">32</span></span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>d_out <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Defining the model</span></span>
+<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a>net <span class="ot">&lt;-</span> <span class="fu">nn_module</span>(</span>
+<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">initialize =</span> <span class="cf">function</span>(d_in, d_hidden, d_out) {</span>
+<span id="cb29-9"><a href="#cb29-9" aria-hidden="true" tabindex="-1"></a>    self<span class="sc">$</span>net <span class="ot">&lt;-</span> <span class="fu">nn_sequential</span>(</span>
+<span id="cb29-10"><a href="#cb29-10" aria-hidden="true" tabindex="-1"></a>      <span class="fu">nn_linear</span>(d_in, d_hidden),</span>
+<span id="cb29-11"><a href="#cb29-11" aria-hidden="true" tabindex="-1"></a>      <span class="fu">nn_relu</span>(),</span>
+<span id="cb29-12"><a href="#cb29-12" aria-hidden="true" tabindex="-1"></a>      <span class="fu">nn_linear</span>(d_hidden, d_out)</span>
+<span id="cb29-13"><a href="#cb29-13" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb29-14"><a href="#cb29-14" aria-hidden="true" tabindex="-1"></a>  },</span>
+<span id="cb29-15"><a href="#cb29-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">forward =</span> <span class="cf">function</span>(x) {</span>
+<span id="cb29-16"><a href="#cb29-16" aria-hidden="true" tabindex="-1"></a>    self<span class="sc">$</span><span class="fu">net</span>(x)</span>
+<span id="cb29-17"><a href="#cb29-17" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb29-18"><a href="#cb29-18" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb29-19"><a href="#cb29-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-20"><a href="#cb29-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-21"><a href="#cb29-21" aria-hidden="true" tabindex="-1"></a><span class="co"># generating a sample dataset</span></span>
+<span id="cb29-22"><a href="#cb29-22" aria-hidden="true" tabindex="-1"></a>total_sample <span class="ot">&lt;-</span> <span class="dv">1000</span></span>
+<span id="cb29-23"><a href="#cb29-23" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fu">torch_randn</span>(total_sample, d_in)</span>
+<span id="cb29-24"><a href="#cb29-24" aria-hidden="true" tabindex="-1"></a>coefs <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="fl">0.2</span>, <span class="sc">-</span><span class="fl">1.3</span>, <span class="sc">-</span><span class="fl">0.5</span>)</span>
+<span id="cb29-25"><a href="#cb29-25" aria-hidden="true" tabindex="-1"></a>y <span class="ot">&lt;-</span> x<span class="sc">$</span><span class="fu">matmul</span>(coefs)<span class="sc">$</span><span class="fu">unsqueeze</span>(<span class="dv">2</span>) <span class="sc">+</span> <span class="fu">torch_randn</span>(total_sample, <span class="dv">1</span>)</span>
+<span id="cb29-26"><a href="#cb29-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-27"><a href="#cb29-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-28"><a href="#cb29-28" aria-hidden="true" tabindex="-1"></a><span class="co"># Initializing the dataset and dataloader</span></span>
+<span id="cb29-29"><a href="#cb29-29" aria-hidden="true" tabindex="-1"></a>data_set <span class="ot">&lt;-</span> <span class="fu">tensor_dataset</span>(x, y)</span>
+<span id="cb29-30"><a href="#cb29-30" aria-hidden="true" tabindex="-1"></a>data_loader <span class="ot">&lt;-</span> <span class="fu">dataloader</span>(data_set, <span class="at">batch_size =</span> <span class="dv">100</span>, <span class="at">shuffle =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>The next code-block splits the <code>dataset</code> into a <code>train</code> and <code>test</code> sets using the 80-20 split.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Split data into train and test sets</span></span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>train_ids <span class="ot">&lt;-</span> <span class="fu">sample</span>(<span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(data_set), <span class="at">size =</span> <span class="fl">0.8</span> <span class="sc">*</span> <span class="fu">length</span>(data_set)) <span class="co"># 80% for training</span></span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>test_ids <span class="ot">&lt;-</span> <span class="fu">setdiff</span>(<span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(data_set), train_ids)                    <span class="co"># Remaining 20% for testing</span></span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Create train and test datasets</span></span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>train_ds <span class="ot">&lt;-</span> <span class="fu">dataset_subset</span>(data_set, <span class="at">indices =</span> train_ids)</span>
+<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a>test_ds <span class="ot">&lt;-</span> <span class="fu">dataset_subset</span>(data_set, <span class="at">indices =</span> test_ids)</span>
+<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Create train and test data loaders</span></span>
+<span id="cb30-10"><a href="#cb30-10" aria-hidden="true" tabindex="-1"></a>train_dl <span class="ot">&lt;-</span> <span class="fu">dataloader</span>(train_ds, <span class="at">batch_size =</span> <span class="dv">100</span>, <span class="at">shuffle =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb30-11"><a href="#cb30-11" aria-hidden="true" tabindex="-1"></a>test_dl <span class="ot">&lt;-</span> <span class="fu">dataloader</span>(test_ds, <span class="at">batch_size =</span> <span class="dv">100</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+</section>
+<section id="model-initialization-and-hyper-parameters-setting" class="level3">
+<h3 class="anchored" data-anchor-id="model-initialization-and-hyper-parameters-setting">Model Initialization and Hyper-Parameters Setting</h3>
+<p>Next, we initialize the model and define the relevant hyper-parameter settings.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="co"># initialize model</span></span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>model <span class="ot">&lt;-</span> <span class="fu">net</span>(<span class="at">d_in =</span> d_in, <span class="at">d_hidden =</span> d_hidden, <span class="at">d_out =</span> d_out)</span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a><span class="co"># setting up parameter</span></span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a>learning_rate <span class="ot">&lt;-</span> <span class="fl">0.001</span></span>
+<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a>loss_fn <span class="ot">&lt;-</span> <span class="fu">nn_mse_loss</span>()</span>
+<span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a>optimizer <span class="ot">&lt;-</span> <span class="fu">optim_adam</span>(model<span class="sc">$</span>parameters, <span class="at">lr =</span> learning_rate)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="functions-for-training-and-evaluation-of-the-model" class="level3">
+<h3 class="anchored" data-anchor-id="functions-for-training-and-evaluation-of-the-model">Functions for Training and Evaluation of the Model</h3>
+<p>The next part of the training process, often used to modularize the training and testing process, is to define the training and testing process into function. This simply means to aggregate the parameters update into relevant functions.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>train_batch <span class="ot">&lt;-</span> <span class="cf">function</span>(b) {</span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>  optimizer<span class="sc">$</span><span class="fu">zero_grad</span>()                         <span class="co"># Step 1: Clear previous gradients</span></span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>  output <span class="ot">&lt;-</span> <span class="fu">model</span>(b[[<span class="dv">1</span>]]<span class="sc">$</span><span class="fu">to</span>(<span class="at">device =</span> device))   <span class="co"># Step 2: Perform forward pass with input data</span></span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>  target <span class="ot">&lt;-</span> b[[<span class="dv">2</span>]]<span class="sc">$</span><span class="fu">to</span>(<span class="at">device =</span> device)          <span class="co"># Step 3: Extract and move target labels to the device</span></span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a>  loss <span class="ot">&lt;-</span> <span class="fu">loss_fn</span>(output, target)               <span class="co"># Step 4: Compute the loss between predictions and targets</span></span>
+<span id="cb32-7"><a href="#cb32-7" aria-hidden="true" tabindex="-1"></a>  loss<span class="sc">$</span><span class="fu">backward</span>()                               <span class="co"># Step 5: Backpropagate gradients</span></span>
+<span id="cb32-8"><a href="#cb32-8" aria-hidden="true" tabindex="-1"></a>  optimizer<span class="sc">$</span><span class="fu">step</span>()                              <span class="co"># Step 6: Update model parameters     </span></span>
+<span id="cb32-9"><a href="#cb32-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-10"><a href="#cb32-10" aria-hidden="true" tabindex="-1"></a>  loss<span class="sc">$</span><span class="fu">item</span>()</span>
+<span id="cb32-11"><a href="#cb32-11" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb32-12"><a href="#cb32-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-13"><a href="#cb32-13" aria-hidden="true" tabindex="-1"></a>valid_batch <span class="ot">&lt;-</span> <span class="cf">function</span>(b) {</span>
+<span id="cb32-14"><a href="#cb32-14" aria-hidden="true" tabindex="-1"></a>  output <span class="ot">&lt;-</span> <span class="fu">model</span>(b[[<span class="dv">1</span>]]<span class="sc">$</span><span class="fu">to</span>(<span class="at">device =</span> device))</span>
+<span id="cb32-15"><a href="#cb32-15" aria-hidden="true" tabindex="-1"></a>  target <span class="ot">&lt;-</span> b[[<span class="dv">2</span>]]<span class="sc">$</span><span class="fu">to</span>(<span class="at">device =</span> device)</span>
+<span id="cb32-16"><a href="#cb32-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-17"><a href="#cb32-17" aria-hidden="true" tabindex="-1"></a>  loss <span class="ot">&lt;-</span> <span class="fu">loss_fn</span>(output, target)</span>
+<span id="cb32-18"><a href="#cb32-18" aria-hidden="true" tabindex="-1"></a>  loss<span class="sc">$</span><span class="fu">item</span>()</span>
+<span id="cb32-19"><a href="#cb32-19" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="training-process-epochs-and-training" class="level3">
+<h3 class="anchored" data-anchor-id="training-process-epochs-and-training">Training Process: Epochs and Training</h3>
+<p>In the training process, we typically set an <code>epoch</code> and train the model based on the number of epochs. For each epoch, we train all the batches in the model. In the example below, we are testing 200 epochs.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>train_losses <span class="ot">&lt;-</span> <span class="fu">c</span>()</span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>valid_losses <span class="ot">&lt;-</span> <span class="fu">c</span>()</span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>num_epochs <span class="ot">&lt;-</span> <span class="dv">200</span></span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (epoch <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>num_epochs) {</span>
+<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a>  model<span class="sc">$</span><span class="fu">train</span>()</span>
+<span id="cb33-8"><a href="#cb33-8" aria-hidden="true" tabindex="-1"></a>  train_loss <span class="ot">&lt;-</span> <span class="fu">c</span>()</span>
+<span id="cb33-9"><a href="#cb33-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-10"><a href="#cb33-10" aria-hidden="true" tabindex="-1"></a>  <span class="co"># use coro::loop() for stability and performance</span></span>
+<span id="cb33-11"><a href="#cb33-11" aria-hidden="true" tabindex="-1"></a>  coro<span class="sc">::</span><span class="fu">loop</span>(<span class="cf">for</span> (b <span class="cf">in</span> train_dl) {</span>
+<span id="cb33-12"><a href="#cb33-12" aria-hidden="true" tabindex="-1"></a>    loss <span class="ot">&lt;-</span> <span class="fu">train_batch</span>(b)</span>
+<span id="cb33-13"><a href="#cb33-13" aria-hidden="true" tabindex="-1"></a>    train_loss <span class="ot">&lt;-</span> <span class="fu">c</span>(train_loss, loss)</span>
+<span id="cb33-14"><a href="#cb33-14" aria-hidden="true" tabindex="-1"></a>  })</span>
+<span id="cb33-15"><a href="#cb33-15" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb33-16"><a href="#cb33-16" aria-hidden="true" tabindex="-1"></a>  train_losses <span class="ot">&lt;-</span> <span class="fu">c</span>(train_losses, <span class="fu">mean</span>(train_loss))</span>
+<span id="cb33-17"><a href="#cb33-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="fu">sprintf</span>(</span>
+<span id="cb33-18"><a href="#cb33-18" aria-hidden="true" tabindex="-1"></a>    <span class="st">"</span><span class="sc">\n</span><span class="st">Epoch %d, training: loss: %3.5f"</span>,</span>
+<span id="cb33-19"><a href="#cb33-19" aria-hidden="true" tabindex="-1"></a>    epoch, <span class="fu">mean</span>(train_loss)</span>
+<span id="cb33-20"><a href="#cb33-20" aria-hidden="true" tabindex="-1"></a>  ))</span>
+<span id="cb33-21"><a href="#cb33-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-22"><a href="#cb33-22" aria-hidden="true" tabindex="-1"></a>  model<span class="sc">$</span><span class="fu">eval</span>()</span>
+<span id="cb33-23"><a href="#cb33-23" aria-hidden="true" tabindex="-1"></a>  valid_loss <span class="ot">&lt;-</span> <span class="fu">c</span>()</span>
+<span id="cb33-24"><a href="#cb33-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-25"><a href="#cb33-25" aria-hidden="true" tabindex="-1"></a>  <span class="co"># disable gradient tracking to reduce memory usage</span></span>
+<span id="cb33-26"><a href="#cb33-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">with_no_grad</span>({</span>
+<span id="cb33-27"><a href="#cb33-27" aria-hidden="true" tabindex="-1"></a>    coro<span class="sc">::</span><span class="fu">loop</span>(<span class="cf">for</span> (b <span class="cf">in</span> test_dl) {</span>
+<span id="cb33-28"><a href="#cb33-28" aria-hidden="true" tabindex="-1"></a>      loss <span class="ot">&lt;-</span> <span class="fu">valid_batch</span>(b)</span>
+<span id="cb33-29"><a href="#cb33-29" aria-hidden="true" tabindex="-1"></a>      valid_loss <span class="ot">&lt;-</span> <span class="fu">c</span>(valid_loss, loss)</span>
+<span id="cb33-30"><a href="#cb33-30" aria-hidden="true" tabindex="-1"></a>    })</span>
+<span id="cb33-31"><a href="#cb33-31" aria-hidden="true" tabindex="-1"></a>  })</span>
+<span id="cb33-32"><a href="#cb33-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-33"><a href="#cb33-33" aria-hidden="true" tabindex="-1"></a>  valid_losses <span class="ot">&lt;-</span> <span class="fu">c</span>(valid_losses, <span class="fu">mean</span>(valid_loss))</span>
+<span id="cb33-34"><a href="#cb33-34" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="fu">sprintf</span>(</span>
+<span id="cb33-35"><a href="#cb33-35" aria-hidden="true" tabindex="-1"></a>    <span class="st">"</span><span class="sc">\n</span><span class="st">Epoch %d, validation: loss: %3.5f"</span>,</span>
+<span id="cb33-36"><a href="#cb33-36" aria-hidden="true" tabindex="-1"></a>    epoch, <span class="fu">mean</span>(valid_loss)</span>
+<span id="cb33-37"><a href="#cb33-37" aria-hidden="true" tabindex="-1"></a>  ))</span>
+<span id="cb33-38"><a href="#cb33-38" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Epoch 1, training: loss: 2.94365
+Epoch 1, validation: loss: 2.55517
+Epoch 2, training: loss: 2.78590
+Epoch 2, validation: loss: 2.42428
+Epoch 3, training: loss: 2.64503
+Epoch 3, validation: loss: 2.29625
+Epoch 4, training: loss: 2.49829
+Epoch 4, validation: loss: 2.17231
+Epoch 5, training: loss: 2.35992
+Epoch 5, validation: loss: 2.05220
+Epoch 6, training: loss: 2.22533
+Epoch 6, validation: loss: 1.93549
+Epoch 7, training: loss: 2.09851
+Epoch 7, validation: loss: 1.82165
+Epoch 8, training: loss: 1.97121
+Epoch 8, validation: loss: 1.71548
+Epoch 9, training: loss: 1.85254
+Epoch 9, validation: loss: 1.61381
+Epoch 10, training: loss: 1.74304
+Epoch 10, validation: loss: 1.51583
+Epoch 11, training: loss: 1.63870
+Epoch 11, validation: loss: 1.42618
+Epoch 12, training: loss: 1.54289
+Epoch 12, validation: loss: 1.34336
+Epoch 13, training: loss: 1.45385
+Epoch 13, validation: loss: 1.26949
+Epoch 14, training: loss: 1.37604
+Epoch 14, validation: loss: 1.20446
+Epoch 15, training: loss: 1.30263
+Epoch 15, validation: loss: 1.15034
+Epoch 16, training: loss: 1.24462
+Epoch 16, validation: loss: 1.10499
+Epoch 17, training: loss: 1.19078
+Epoch 17, validation: loss: 1.06814
+Epoch 18, training: loss: 1.15083
+Epoch 18, validation: loss: 1.03764
+Epoch 19, training: loss: 1.11469
+Epoch 19, validation: loss: 1.01361
+Epoch 20, training: loss: 1.08824
+Epoch 20, validation: loss: 0.99658
+Epoch 21, training: loss: 1.06559
+Epoch 21, validation: loss: 0.98452
+Epoch 22, training: loss: 1.04687
+Epoch 22, validation: loss: 0.97703
+Epoch 23, training: loss: 1.03495
+Epoch 23, validation: loss: 0.97147
+Epoch 24, training: loss: 1.02618
+Epoch 24, validation: loss: 0.96874
+Epoch 25, training: loss: 1.01895
+Epoch 25, validation: loss: 0.96718
+Epoch 26, training: loss: 1.01438
+Epoch 26, validation: loss: 0.96578
+Epoch 27, training: loss: 1.01003
+Epoch 27, validation: loss: 0.96498
+Epoch 28, training: loss: 1.00781
+Epoch 28, validation: loss: 0.96531
+Epoch 29, training: loss: 1.00521
+Epoch 29, validation: loss: 0.96515
+Epoch 30, training: loss: 1.00279
+Epoch 30, validation: loss: 0.96445
+Epoch 31, training: loss: 1.00180
+Epoch 31, validation: loss: 0.96449
+Epoch 32, training: loss: 1.00021
+Epoch 32, validation: loss: 0.96420
+Epoch 33, training: loss: 0.99912
+Epoch 33, validation: loss: 0.96312
+Epoch 34, training: loss: 0.99804
+Epoch 34, validation: loss: 0.96305
+Epoch 35, training: loss: 0.99692
+Epoch 35, validation: loss: 0.96250
+Epoch 36, training: loss: 0.99595
+Epoch 36, validation: loss: 0.96186
+Epoch 37, training: loss: 0.99509
+Epoch 37, validation: loss: 0.96144
+Epoch 38, training: loss: 0.99429
+Epoch 38, validation: loss: 0.96050
+Epoch 39, training: loss: 0.99364
+Epoch 39, validation: loss: 0.95972
+Epoch 40, training: loss: 0.99266
+Epoch 40, validation: loss: 0.95969
+Epoch 41, training: loss: 0.99186
+Epoch 41, validation: loss: 0.95918
+Epoch 42, training: loss: 0.99123
+Epoch 42, validation: loss: 0.95803
+Epoch 43, training: loss: 0.99038
+Epoch 43, validation: loss: 0.95803
+Epoch 44, training: loss: 0.98993
+Epoch 44, validation: loss: 0.95764
+Epoch 45, training: loss: 0.98960
+Epoch 45, validation: loss: 0.95632
+Epoch 46, training: loss: 0.98904
+Epoch 46, validation: loss: 0.95643
+Epoch 47, training: loss: 0.98823
+Epoch 47, validation: loss: 0.95567
+Epoch 48, training: loss: 0.98746
+Epoch 48, validation: loss: 0.95539
+Epoch 49, training: loss: 0.98721
+Epoch 49, validation: loss: 0.95512
+Epoch 50, training: loss: 0.98652
+Epoch 50, validation: loss: 0.95471
+Epoch 51, training: loss: 0.98632
+Epoch 51, validation: loss: 0.95417
+Epoch 52, training: loss: 0.98569
+Epoch 52, validation: loss: 0.95362
+Epoch 53, training: loss: 0.98504
+Epoch 53, validation: loss: 0.95336
+Epoch 54, training: loss: 0.98461
+Epoch 54, validation: loss: 0.95274
+Epoch 55, training: loss: 0.98417
+Epoch 55, validation: loss: 0.95282
+Epoch 56, training: loss: 0.98364
+Epoch 56, validation: loss: 0.95293
+Epoch 57, training: loss: 0.98344
+Epoch 57, validation: loss: 0.95215
+Epoch 58, training: loss: 0.98292
+Epoch 58, validation: loss: 0.95148
+Epoch 59, training: loss: 0.98255
+Epoch 59, validation: loss: 0.95159
+Epoch 60, training: loss: 0.98181
+Epoch 60, validation: loss: 0.95145
+Epoch 61, training: loss: 0.98195
+Epoch 61, validation: loss: 0.95159
+Epoch 62, training: loss: 0.98119
+Epoch 62, validation: loss: 0.95072
+Epoch 63, training: loss: 0.98050
+Epoch 63, validation: loss: 0.95064
+Epoch 64, training: loss: 0.98052
+Epoch 64, validation: loss: 0.95032
+Epoch 65, training: loss: 0.97988
+Epoch 65, validation: loss: 0.94944
+Epoch 66, training: loss: 0.97961
+Epoch 66, validation: loss: 0.94962
+Epoch 67, training: loss: 0.97961
+Epoch 67, validation: loss: 0.94966
+Epoch 68, training: loss: 0.97865
+Epoch 68, validation: loss: 0.94910
+Epoch 69, training: loss: 0.97859
+Epoch 69, validation: loss: 0.94817
+Epoch 70, training: loss: 0.97852
+Epoch 70, validation: loss: 0.94820
+Epoch 71, training: loss: 0.97812
+Epoch 71, validation: loss: 0.94859
+Epoch 72, training: loss: 0.97753
+Epoch 72, validation: loss: 0.94751
+Epoch 73, training: loss: 0.97683
+Epoch 73, validation: loss: 0.94763
+Epoch 74, training: loss: 0.97665
+Epoch 74, validation: loss: 0.94738
+Epoch 75, training: loss: 0.97615
+Epoch 75, validation: loss: 0.94717
+Epoch 76, training: loss: 0.97580
+Epoch 76, validation: loss: 0.94742
+Epoch 77, training: loss: 0.97613
+Epoch 77, validation: loss: 0.94629
+Epoch 78, training: loss: 0.97516
+Epoch 78, validation: loss: 0.94637
+Epoch 79, training: loss: 0.97532
+Epoch 79, validation: loss: 0.94593
+Epoch 80, training: loss: 0.97455
+Epoch 80, validation: loss: 0.94595
+Epoch 81, training: loss: 0.97445
+Epoch 81, validation: loss: 0.94600
+Epoch 82, training: loss: 0.97367
+Epoch 82, validation: loss: 0.94644
+Epoch 83, training: loss: 0.97359
+Epoch 83, validation: loss: 0.94547
+Epoch 84, training: loss: 0.97317
+Epoch 84, validation: loss: 0.94540
+Epoch 85, training: loss: 0.97290
+Epoch 85, validation: loss: 0.94526
+Epoch 86, training: loss: 0.97256
+Epoch 86, validation: loss: 0.94570
+Epoch 87, training: loss: 0.97212
+Epoch 87, validation: loss: 0.94520
+Epoch 88, training: loss: 0.97169
+Epoch 88, validation: loss: 0.94493
+Epoch 89, training: loss: 0.97128
+Epoch 89, validation: loss: 0.94454
+Epoch 90, training: loss: 0.97106
+Epoch 90, validation: loss: 0.94518
+Epoch 91, training: loss: 0.97072
+Epoch 91, validation: loss: 0.94449
+Epoch 92, training: loss: 0.97036
+Epoch 92, validation: loss: 0.94410
+Epoch 93, training: loss: 0.96991
+Epoch 93, validation: loss: 0.94397
+Epoch 94, training: loss: 0.96944
+Epoch 94, validation: loss: 0.94415
+Epoch 95, training: loss: 0.96927
+Epoch 95, validation: loss: 0.94344
+Epoch 96, training: loss: 0.96957
+Epoch 96, validation: loss: 0.94405
+Epoch 97, training: loss: 0.96853
+Epoch 97, validation: loss: 0.94393
+Epoch 98, training: loss: 0.96849
+Epoch 98, validation: loss: 0.94419
+Epoch 99, training: loss: 0.96814
+Epoch 99, validation: loss: 0.94341
+Epoch 100, training: loss: 0.96780
+Epoch 100, validation: loss: 0.94299
+Epoch 101, training: loss: 0.96714
+Epoch 101, validation: loss: 0.94365
+Epoch 102, training: loss: 0.96758
+Epoch 102, validation: loss: 0.94409
+Epoch 103, training: loss: 0.96677
+Epoch 103, validation: loss: 0.94372
+Epoch 104, training: loss: 0.96631
+Epoch 104, validation: loss: 0.94360
+Epoch 105, training: loss: 0.96665
+Epoch 105, validation: loss: 0.94277
+Epoch 106, training: loss: 0.96630
+Epoch 106, validation: loss: 0.94368
+Epoch 107, training: loss: 0.96544
+Epoch 107, validation: loss: 0.94346
+Epoch 108, training: loss: 0.96539
+Epoch 108, validation: loss: 0.94350
+Epoch 109, training: loss: 0.96549
+Epoch 109, validation: loss: 0.94375
+Epoch 110, training: loss: 0.96501
+Epoch 110, validation: loss: 0.94317
+Epoch 111, training: loss: 0.96452
+Epoch 111, validation: loss: 0.94339
+Epoch 112, training: loss: 0.96408
+Epoch 112, validation: loss: 0.94323
+Epoch 113, training: loss: 0.96390
+Epoch 113, validation: loss: 0.94318
+Epoch 114, training: loss: 0.96385
+Epoch 114, validation: loss: 0.94289
+Epoch 115, training: loss: 0.96341
+Epoch 115, validation: loss: 0.94243
+Epoch 116, training: loss: 0.96313
+Epoch 116, validation: loss: 0.94233
+Epoch 117, training: loss: 0.96330
+Epoch 117, validation: loss: 0.94158
+Epoch 118, training: loss: 0.96254
+Epoch 118, validation: loss: 0.94211
+Epoch 119, training: loss: 0.96285
+Epoch 119, validation: loss: 0.94240
+Epoch 120, training: loss: 0.96202
+Epoch 120, validation: loss: 0.94297
+Epoch 121, training: loss: 0.96223
+Epoch 121, validation: loss: 0.94254
+Epoch 122, training: loss: 0.96149
+Epoch 122, validation: loss: 0.94196
+Epoch 123, training: loss: 0.96118
+Epoch 123, validation: loss: 0.94242
+Epoch 124, training: loss: 0.96107
+Epoch 124, validation: loss: 0.94229
+Epoch 125, training: loss: 0.96045
+Epoch 125, validation: loss: 0.94226
+Epoch 126, training: loss: 0.96076
+Epoch 126, validation: loss: 0.94193
+Epoch 127, training: loss: 0.96042
+Epoch 127, validation: loss: 0.94222
+Epoch 128, training: loss: 0.96019
+Epoch 128, validation: loss: 0.94140
+Epoch 129, training: loss: 0.95995
+Epoch 129, validation: loss: 0.94085
+Epoch 130, training: loss: 0.95983
+Epoch 130, validation: loss: 0.94067
+Epoch 131, training: loss: 0.95934
+Epoch 131, validation: loss: 0.94014
+Epoch 132, training: loss: 0.95927
+Epoch 132, validation: loss: 0.94043
+Epoch 133, training: loss: 0.95872
+Epoch 133, validation: loss: 0.94129
+Epoch 134, training: loss: 0.95857
+Epoch 134, validation: loss: 0.94143
+Epoch 135, training: loss: 0.95841
+Epoch 135, validation: loss: 0.94121
+Epoch 136, training: loss: 0.95781
+Epoch 136, validation: loss: 0.94068
+Epoch 137, training: loss: 0.95811
+Epoch 137, validation: loss: 0.94033
+Epoch 138, training: loss: 0.95737
+Epoch 138, validation: loss: 0.93942
+Epoch 139, training: loss: 0.95729
+Epoch 139, validation: loss: 0.94029
+Epoch 140, training: loss: 0.95750
+Epoch 140, validation: loss: 0.94046
+Epoch 141, training: loss: 0.95711
+Epoch 141, validation: loss: 0.94027
+Epoch 142, training: loss: 0.95663
+Epoch 142, validation: loss: 0.94035
+Epoch 143, training: loss: 0.95644
+Epoch 143, validation: loss: 0.93970
+Epoch 144, training: loss: 0.95639
+Epoch 144, validation: loss: 0.93938
+Epoch 145, training: loss: 0.95582
+Epoch 145, validation: loss: 0.94011
+Epoch 146, training: loss: 0.95580
+Epoch 146, validation: loss: 0.94004
+Epoch 147, training: loss: 0.95558
+Epoch 147, validation: loss: 0.94107
+Epoch 148, training: loss: 0.95540
+Epoch 148, validation: loss: 0.94052
+Epoch 149, training: loss: 0.95477
+Epoch 149, validation: loss: 0.94071
+Epoch 150, training: loss: 0.95497
+Epoch 150, validation: loss: 0.94046
+Epoch 151, training: loss: 0.95477
+Epoch 151, validation: loss: 0.94101
+Epoch 152, training: loss: 0.95447
+Epoch 152, validation: loss: 0.94081
+Epoch 153, training: loss: 0.95410
+Epoch 153, validation: loss: 0.93992
+Epoch 154, training: loss: 0.95415
+Epoch 154, validation: loss: 0.93977
+Epoch 155, training: loss: 0.95406
+Epoch 155, validation: loss: 0.93969
+Epoch 156, training: loss: 0.95391
+Epoch 156, validation: loss: 0.94076
+Epoch 157, training: loss: 0.95325
+Epoch 157, validation: loss: 0.93998
+Epoch 158, training: loss: 0.95381
+Epoch 158, validation: loss: 0.93990
+Epoch 159, training: loss: 0.95297
+Epoch 159, validation: loss: 0.93972
+Epoch 160, training: loss: 0.95273
+Epoch 160, validation: loss: 0.93915
+Epoch 161, training: loss: 0.95263
+Epoch 161, validation: loss: 0.93896
+Epoch 162, training: loss: 0.95273
+Epoch 162, validation: loss: 0.93875
+Epoch 163, training: loss: 0.95238
+Epoch 163, validation: loss: 0.93871
+Epoch 164, training: loss: 0.95207
+Epoch 164, validation: loss: 0.93943
+Epoch 165, training: loss: 0.95157
+Epoch 165, validation: loss: 0.93969
+Epoch 166, training: loss: 0.95183
+Epoch 166, validation: loss: 0.94033
+Epoch 167, training: loss: 0.95173
+Epoch 167, validation: loss: 0.94023
+Epoch 168, training: loss: 0.95130
+Epoch 168, validation: loss: 0.93888
+Epoch 169, training: loss: 0.95137
+Epoch 169, validation: loss: 0.93847
+Epoch 170, training: loss: 0.95102
+Epoch 170, validation: loss: 0.93884
+Epoch 171, training: loss: 0.95059
+Epoch 171, validation: loss: 0.93847
+Epoch 172, training: loss: 0.95044
+Epoch 172, validation: loss: 0.93866
+Epoch 173, training: loss: 0.95026
+Epoch 173, validation: loss: 0.93905
+Epoch 174, training: loss: 0.95043
+Epoch 174, validation: loss: 0.93960
+Epoch 175, training: loss: 0.95018
+Epoch 175, validation: loss: 0.93879
+Epoch 176, training: loss: 0.95013
+Epoch 176, validation: loss: 0.93934
+Epoch 177, training: loss: 0.94970
+Epoch 177, validation: loss: 0.93852
+Epoch 178, training: loss: 0.94927
+Epoch 178, validation: loss: 0.93854
+Epoch 179, training: loss: 0.94935
+Epoch 179, validation: loss: 0.93888
+Epoch 180, training: loss: 0.94876
+Epoch 180, validation: loss: 0.93861
+Epoch 181, training: loss: 0.94892
+Epoch 181, validation: loss: 0.93876
+Epoch 182, training: loss: 0.94909
+Epoch 182, validation: loss: 0.93833
+Epoch 183, training: loss: 0.94854
+Epoch 183, validation: loss: 0.93811
+Epoch 184, training: loss: 0.94852
+Epoch 184, validation: loss: 0.93903
+Epoch 185, training: loss: 0.94815
+Epoch 185, validation: loss: 0.93922
+Epoch 186, training: loss: 0.94788
+Epoch 186, validation: loss: 0.93880
+Epoch 187, training: loss: 0.94797
+Epoch 187, validation: loss: 0.93915
+Epoch 188, training: loss: 0.94789
+Epoch 188, validation: loss: 0.93830
+Epoch 189, training: loss: 0.94788
+Epoch 189, validation: loss: 0.93911
+Epoch 190, training: loss: 0.94724
+Epoch 190, validation: loss: 0.93913
+Epoch 191, training: loss: 0.94724
+Epoch 191, validation: loss: 0.93796
+Epoch 192, training: loss: 0.94745
+Epoch 192, validation: loss: 0.93882
+Epoch 193, training: loss: 0.94676
+Epoch 193, validation: loss: 0.93758
+Epoch 194, training: loss: 0.94653
+Epoch 194, validation: loss: 0.93745
+Epoch 195, training: loss: 0.94673
+Epoch 195, validation: loss: 0.93862
+Epoch 196, training: loss: 0.94594
+Epoch 196, validation: loss: 0.93825
+Epoch 197, training: loss: 0.94621
+Epoch 197, validation: loss: 0.93922
+Epoch 198, training: loss: 0.94568
+Epoch 198, validation: loss: 0.93965
+Epoch 199, training: loss: 0.94554
+Epoch 199, validation: loss: 0.93909
+Epoch 200, training: loss: 0.94538
+Epoch 200, validation: loss: 0.93956</code></pre>
+</div>
+</div>
+</section>
+<section id="visualizing-loss-for-training-and-test-data" class="level3">
+<h3 class="anchored" data-anchor-id="visualizing-loss-for-training-and-test-data">Visualizing Loss for Training and Test Data</h3>
+<p>Now we can visualize the loss which have been captured from the training process.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Convert losses to a data frame for visualization</span></span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>loss_data <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">Epoch =</span> <span class="fu">rep</span>(<span class="dv">1</span><span class="sc">:</span>num_epochs, <span class="dv">2</span>),</span>
+<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">Loss =</span> <span class="fu">c</span>(train_losses, valid_losses),</span>
+<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">Type =</span> <span class="fu">rep</span>(<span class="fu">c</span>(<span class="st">"Training"</span>, <span class="st">"Validation"</span>), <span class="at">each =</span> num_epochs)</span>
+<span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb35-7"><a href="#cb35-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-8"><a href="#cb35-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot using ggplot2</span></span>
+<span id="cb35-9"><a href="#cb35-9" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(loss_data, <span class="fu">aes</span>(<span class="at">x =</span> Epoch, <span class="at">y =</span> Loss, <span class="at">color =</span> Type)) <span class="sc">+</span></span>
+<span id="cb35-10"><a href="#cb35-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>() <span class="sc">+</span></span>
+<span id="cb35-11"><a href="#cb35-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Training and Validation Loss by Epoch"</span>,</span>
+<span id="cb35-12"><a href="#cb35-12" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"Epoch"</span>,</span>
+<span id="cb35-13"><a href="#cb35-13" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="st">"Loss"</span>) <span class="sc">+</span></span>
+<span id="cb35-14"><a href="#cb35-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Week-9---Neural-Networks-with-torch_files/figure-html/unnamed-chunk-19-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="implementing-a-more-complex-model-architecture" class="level3">
+<h3 class="anchored" data-anchor-id="implementing-a-more-complex-model-architecture">Implementing a More Complex Model Architecture</h3>
+<p>In the next section, we implement a more complex architecture that includes <code>drop_out</code> regularization and a few more layers.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Second Model</span></span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>net <span class="ot">&lt;-</span> <span class="fu">nn_module</span>(</span>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">initialize =</span> <span class="cf">function</span>(d_in, d_hidden1, d_hidden2, d_out, <span class="at">dropout_rate =</span> <span class="fl">0.5</span>) {</span>
+<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a>    self<span class="sc">$</span>net <span class="ot">&lt;-</span> <span class="fu">nn_sequential</span>(</span>
+<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a>      <span class="fu">nn_linear</span>(d_in, d_hidden1),</span>
+<span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a>      <span class="fu">nn_relu</span>(),</span>
+<span id="cb36-7"><a href="#cb36-7" aria-hidden="true" tabindex="-1"></a>      <span class="fu">nn_dropout</span>(dropout_rate),        <span class="co"># Dropout after first hidden layer</span></span>
+<span id="cb36-8"><a href="#cb36-8" aria-hidden="true" tabindex="-1"></a>      <span class="fu">nn_linear</span>(d_hidden1, d_hidden2), <span class="co"># Second hidden layer</span></span>
+<span id="cb36-9"><a href="#cb36-9" aria-hidden="true" tabindex="-1"></a>      <span class="fu">nn_relu</span>(),</span>
+<span id="cb36-10"><a href="#cb36-10" aria-hidden="true" tabindex="-1"></a>      <span class="fu">nn_dropout</span>(dropout_rate),        <span class="co"># Dropout after second hidden layer</span></span>
+<span id="cb36-11"><a href="#cb36-11" aria-hidden="true" tabindex="-1"></a>      <span class="fu">nn_linear</span>(d_hidden2, d_out)      <span class="co"># Output layer</span></span>
+<span id="cb36-12"><a href="#cb36-12" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb36-13"><a href="#cb36-13" aria-hidden="true" tabindex="-1"></a>  },</span>
+<span id="cb36-14"><a href="#cb36-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">forward =</span> <span class="cf">function</span>(x) {</span>
+<span id="cb36-15"><a href="#cb36-15" aria-hidden="true" tabindex="-1"></a>    self<span class="sc">$</span><span class="fu">net</span>(x)</span>
+<span id="cb36-16"><a href="#cb36-16" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb36-17"><a href="#cb36-17" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb36-18"><a href="#cb36-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-19"><a href="#cb36-19" aria-hidden="true" tabindex="-1"></a><span class="co"># Set up dimensions</span></span>
+<span id="cb36-20"><a href="#cb36-20" aria-hidden="true" tabindex="-1"></a>d_in <span class="ot">&lt;-</span> <span class="dv">3</span>         <span class="co"># Input features</span></span>
+<span id="cb36-21"><a href="#cb36-21" aria-hidden="true" tabindex="-1"></a>d_hidden1 <span class="ot">&lt;-</span> <span class="dv">64</span>   <span class="co"># First hidden layer size</span></span>
+<span id="cb36-22"><a href="#cb36-22" aria-hidden="true" tabindex="-1"></a>d_hidden2 <span class="ot">&lt;-</span> <span class="dv">32</span>   <span class="co"># Second hidden layer size</span></span>
+<span id="cb36-23"><a href="#cb36-23" aria-hidden="true" tabindex="-1"></a>d_out <span class="ot">&lt;-</span> <span class="dv">1</span>        <span class="co"># Output dimension (for regression)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>model <span class="ot">&lt;-</span> <span class="fu">net</span>(<span class="at">d_in =</span> d_in, <span class="at">d_hidden1 =</span> d_hidden1, <span class="at">d_hidden2 =</span> d_hidden2, <span class="at">d_out =</span> d_out, <span class="at">dropout_rate =</span> <span class="fl">0.5</span>)</span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a><span class="co"># setting up parameter</span></span>
+<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a>learning_rate <span class="ot">&lt;-</span> <span class="fl">0.001</span></span>
+<span id="cb37-5"><a href="#cb37-5" aria-hidden="true" tabindex="-1"></a>loss_fn <span class="ot">&lt;-</span> <span class="fu">nn_mse_loss</span>()</span>
+<span id="cb37-6"><a href="#cb37-6" aria-hidden="true" tabindex="-1"></a>optimizer <span class="ot">&lt;-</span> <span class="fu">optim_adam</span>(model<span class="sc">$</span>parameters, <span class="at">lr =</span> learning_rate)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>train_losses <span class="ot">&lt;-</span> <span class="fu">c</span>()</span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>valid_losses <span class="ot">&lt;-</span> <span class="fu">c</span>()</span>
+<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-4"><a href="#cb38-4" aria-hidden="true" tabindex="-1"></a>num_epochs <span class="ot">&lt;-</span> <span class="dv">200</span></span>
+<span id="cb38-5"><a href="#cb38-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-6"><a href="#cb38-6" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (epoch <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>num_epochs) {</span>
+<span id="cb38-7"><a href="#cb38-7" aria-hidden="true" tabindex="-1"></a>  model<span class="sc">$</span><span class="fu">train</span>()</span>
+<span id="cb38-8"><a href="#cb38-8" aria-hidden="true" tabindex="-1"></a>  train_loss <span class="ot">&lt;-</span> <span class="fu">c</span>()</span>
+<span id="cb38-9"><a href="#cb38-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-10"><a href="#cb38-10" aria-hidden="true" tabindex="-1"></a>  <span class="co"># use coro::loop() for stability and performance</span></span>
+<span id="cb38-11"><a href="#cb38-11" aria-hidden="true" tabindex="-1"></a>  coro<span class="sc">::</span><span class="fu">loop</span>(<span class="cf">for</span> (b <span class="cf">in</span> train_dl) {</span>
+<span id="cb38-12"><a href="#cb38-12" aria-hidden="true" tabindex="-1"></a>    loss <span class="ot">&lt;-</span> <span class="fu">train_batch</span>(b)</span>
+<span id="cb38-13"><a href="#cb38-13" aria-hidden="true" tabindex="-1"></a>    train_loss <span class="ot">&lt;-</span> <span class="fu">c</span>(train_loss, loss)</span>
+<span id="cb38-14"><a href="#cb38-14" aria-hidden="true" tabindex="-1"></a>  })</span>
+<span id="cb38-15"><a href="#cb38-15" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb38-16"><a href="#cb38-16" aria-hidden="true" tabindex="-1"></a>  train_losses <span class="ot">&lt;-</span> <span class="fu">c</span>(train_losses, <span class="fu">mean</span>(train_loss))</span>
+<span id="cb38-17"><a href="#cb38-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="fu">sprintf</span>(</span>
+<span id="cb38-18"><a href="#cb38-18" aria-hidden="true" tabindex="-1"></a>    <span class="st">"</span><span class="sc">\n</span><span class="st">Epoch %d, training: loss: %3.5f"</span>,</span>
+<span id="cb38-19"><a href="#cb38-19" aria-hidden="true" tabindex="-1"></a>    epoch, <span class="fu">mean</span>(train_loss)</span>
+<span id="cb38-20"><a href="#cb38-20" aria-hidden="true" tabindex="-1"></a>  ))</span>
+<span id="cb38-21"><a href="#cb38-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-22"><a href="#cb38-22" aria-hidden="true" tabindex="-1"></a>  model<span class="sc">$</span><span class="fu">eval</span>()</span>
+<span id="cb38-23"><a href="#cb38-23" aria-hidden="true" tabindex="-1"></a>  valid_loss <span class="ot">&lt;-</span> <span class="fu">c</span>()</span>
+<span id="cb38-24"><a href="#cb38-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-25"><a href="#cb38-25" aria-hidden="true" tabindex="-1"></a>  <span class="co"># disable gradient tracking to reduce memory usage</span></span>
+<span id="cb38-26"><a href="#cb38-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">with_no_grad</span>({</span>
+<span id="cb38-27"><a href="#cb38-27" aria-hidden="true" tabindex="-1"></a>    coro<span class="sc">::</span><span class="fu">loop</span>(<span class="cf">for</span> (b <span class="cf">in</span> test_dl) {</span>
+<span id="cb38-28"><a href="#cb38-28" aria-hidden="true" tabindex="-1"></a>      loss <span class="ot">&lt;-</span> <span class="fu">valid_batch</span>(b)</span>
+<span id="cb38-29"><a href="#cb38-29" aria-hidden="true" tabindex="-1"></a>      valid_loss <span class="ot">&lt;-</span> <span class="fu">c</span>(valid_loss, loss)</span>
+<span id="cb38-30"><a href="#cb38-30" aria-hidden="true" tabindex="-1"></a>    })</span>
+<span id="cb38-31"><a href="#cb38-31" aria-hidden="true" tabindex="-1"></a>  })</span>
+<span id="cb38-32"><a href="#cb38-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-33"><a href="#cb38-33" aria-hidden="true" tabindex="-1"></a>  valid_losses <span class="ot">&lt;-</span> <span class="fu">c</span>(valid_losses, <span class="fu">mean</span>(valid_loss))</span>
+<span id="cb38-34"><a href="#cb38-34" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="fu">sprintf</span>(</span>
+<span id="cb38-35"><a href="#cb38-35" aria-hidden="true" tabindex="-1"></a>    <span class="st">"</span><span class="sc">\n</span><span class="st">Epoch %d, validation: loss: %3.5f"</span>,</span>
+<span id="cb38-36"><a href="#cb38-36" aria-hidden="true" tabindex="-1"></a>    epoch, <span class="fu">mean</span>(valid_loss)</span>
+<span id="cb38-37"><a href="#cb38-37" aria-hidden="true" tabindex="-1"></a>  ))</span>
+<span id="cb38-38"><a href="#cb38-38" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Epoch 1, training: loss: 3.04129
+Epoch 1, validation: loss: 2.49182
+Epoch 2, training: loss: 2.70675
+Epoch 2, validation: loss: 2.19826
+Epoch 3, training: loss: 2.42974
+Epoch 3, validation: loss: 1.92922
+Epoch 4, training: loss: 2.12130
+Epoch 4, validation: loss: 1.67345
+Epoch 5, training: loss: 1.87867
+Epoch 5, validation: loss: 1.43695
+Epoch 6, training: loss: 1.63707
+Epoch 6, validation: loss: 1.24421
+Epoch 7, training: loss: 1.56953
+Epoch 7, validation: loss: 1.12122
+Epoch 8, training: loss: 1.44736
+Epoch 8, validation: loss: 1.06864
+Epoch 9, training: loss: 1.45732
+Epoch 9, validation: loss: 1.04400
+Epoch 10, training: loss: 1.49615
+Epoch 10, validation: loss: 1.02905
+Epoch 11, training: loss: 1.49896
+Epoch 11, validation: loss: 1.01905
+Epoch 12, training: loss: 1.32322
+Epoch 12, validation: loss: 1.01001
+Epoch 13, training: loss: 1.37264
+Epoch 13, validation: loss: 1.00121
+Epoch 14, training: loss: 1.34058
+Epoch 14, validation: loss: 0.99384
+Epoch 15, training: loss: 1.38715
+Epoch 15, validation: loss: 0.98898
+Epoch 16, training: loss: 1.38018
+Epoch 16, validation: loss: 0.98526
+Epoch 17, training: loss: 1.31205
+Epoch 17, validation: loss: 0.97976
+Epoch 18, training: loss: 1.37369
+Epoch 18, validation: loss: 0.98018
+Epoch 19, training: loss: 1.36762
+Epoch 19, validation: loss: 0.98339
+Epoch 20, training: loss: 1.33672
+Epoch 20, validation: loss: 0.97917
+Epoch 21, training: loss: 1.26622
+Epoch 21, validation: loss: 0.97180
+Epoch 22, training: loss: 1.32552
+Epoch 22, validation: loss: 0.96941
+Epoch 23, training: loss: 1.24171
+Epoch 23, validation: loss: 0.96552
+Epoch 24, training: loss: 1.26189
+Epoch 24, validation: loss: 0.96179
+Epoch 25, training: loss: 1.28679
+Epoch 25, validation: loss: 0.96611
+Epoch 26, training: loss: 1.26882
+Epoch 26, validation: loss: 0.96165
+Epoch 27, training: loss: 1.27883
+Epoch 27, validation: loss: 0.96035
+Epoch 28, training: loss: 1.25221
+Epoch 28, validation: loss: 0.96177
+Epoch 29, training: loss: 1.39185
+Epoch 29, validation: loss: 0.96294
+Epoch 30, training: loss: 1.22702
+Epoch 30, validation: loss: 0.96597
+Epoch 31, training: loss: 1.32413
+Epoch 31, validation: loss: 0.96562
+Epoch 32, training: loss: 1.28324
+Epoch 32, validation: loss: 0.95764
+Epoch 33, training: loss: 1.28698
+Epoch 33, validation: loss: 0.95500
+Epoch 34, training: loss: 1.29017
+Epoch 34, validation: loss: 0.95262
+Epoch 35, training: loss: 1.28525
+Epoch 35, validation: loss: 0.95492
+Epoch 36, training: loss: 1.23844
+Epoch 36, validation: loss: 0.95722
+Epoch 37, training: loss: 1.25541
+Epoch 37, validation: loss: 0.95741
+Epoch 38, training: loss: 1.22397
+Epoch 38, validation: loss: 0.95502
+Epoch 39, training: loss: 1.33666
+Epoch 39, validation: loss: 0.95914
+Epoch 40, training: loss: 1.27550
+Epoch 40, validation: loss: 0.96764
+Epoch 41, training: loss: 1.20324
+Epoch 41, validation: loss: 0.96571
+Epoch 42, training: loss: 1.34700
+Epoch 42, validation: loss: 0.95997
+Epoch 43, training: loss: 1.27602
+Epoch 43, validation: loss: 0.95804
+Epoch 44, training: loss: 1.29403
+Epoch 44, validation: loss: 0.95662
+Epoch 45, training: loss: 1.21665
+Epoch 45, validation: loss: 0.94921
+Epoch 46, training: loss: 1.19933
+Epoch 46, validation: loss: 0.95048
+Epoch 47, training: loss: 1.22907
+Epoch 47, validation: loss: 0.95546
+Epoch 48, training: loss: 1.21671
+Epoch 48, validation: loss: 0.95095
+Epoch 49, training: loss: 1.25867
+Epoch 49, validation: loss: 0.94747
+Epoch 50, training: loss: 1.25224
+Epoch 50, validation: loss: 0.94720
+Epoch 51, training: loss: 1.28374
+Epoch 51, validation: loss: 0.94755
+Epoch 52, training: loss: 1.23763
+Epoch 52, validation: loss: 0.94631
+Epoch 53, training: loss: 1.25226
+Epoch 53, validation: loss: 0.94581
+Epoch 54, training: loss: 1.26391
+Epoch 54, validation: loss: 0.94417
+Epoch 55, training: loss: 1.25631
+Epoch 55, validation: loss: 0.94562
+Epoch 56, training: loss: 1.26138
+Epoch 56, validation: loss: 0.94705
+Epoch 57, training: loss: 1.25117
+Epoch 57, validation: loss: 0.95310
+Epoch 58, training: loss: 1.27016
+Epoch 58, validation: loss: 0.95632
+Epoch 59, training: loss: 1.19127
+Epoch 59, validation: loss: 0.94643
+Epoch 60, training: loss: 1.17991
+Epoch 60, validation: loss: 0.94630
+Epoch 61, training: loss: 1.21372
+Epoch 61, validation: loss: 0.94617
+Epoch 62, training: loss: 1.23823
+Epoch 62, validation: loss: 0.94349
+Epoch 63, training: loss: 1.30964
+Epoch 63, validation: loss: 0.94261
+Epoch 64, training: loss: 1.19987
+Epoch 64, validation: loss: 0.94585
+Epoch 65, training: loss: 1.21229
+Epoch 65, validation: loss: 0.94826
+Epoch 66, training: loss: 1.28666
+Epoch 66, validation: loss: 0.94519
+Epoch 67, training: loss: 1.22894
+Epoch 67, validation: loss: 0.94554
+Epoch 68, training: loss: 1.27364
+Epoch 68, validation: loss: 0.94239
+Epoch 69, training: loss: 1.16846
+Epoch 69, validation: loss: 0.93958
+Epoch 70, training: loss: 1.23304
+Epoch 70, validation: loss: 0.94253
+Epoch 71, training: loss: 1.22899
+Epoch 71, validation: loss: 0.94514
+Epoch 72, training: loss: 1.29422
+Epoch 72, validation: loss: 0.94762
+Epoch 73, training: loss: 1.21251
+Epoch 73, validation: loss: 0.95305
+Epoch 74, training: loss: 1.21936
+Epoch 74, validation: loss: 0.95781
+Epoch 75, training: loss: 1.25512
+Epoch 75, validation: loss: 0.95039
+Epoch 76, training: loss: 1.25073
+Epoch 76, validation: loss: 0.94520
+Epoch 77, training: loss: 1.27184
+Epoch 77, validation: loss: 0.94521
+Epoch 78, training: loss: 1.25566
+Epoch 78, validation: loss: 0.94502
+Epoch 79, training: loss: 1.24453
+Epoch 79, validation: loss: 0.94839
+Epoch 80, training: loss: 1.30083
+Epoch 80, validation: loss: 0.94917
+Epoch 81, training: loss: 1.18025
+Epoch 81, validation: loss: 0.94594
+Epoch 82, training: loss: 1.24771
+Epoch 82, validation: loss: 0.94653
+Epoch 83, training: loss: 1.24340
+Epoch 83, validation: loss: 0.94938
+Epoch 84, training: loss: 1.25463
+Epoch 84, validation: loss: 0.94852
+Epoch 85, training: loss: 1.20973
+Epoch 85, validation: loss: 0.94532
+Epoch 86, training: loss: 1.24473
+Epoch 86, validation: loss: 0.94102
+Epoch 87, training: loss: 1.18387
+Epoch 87, validation: loss: 0.94026
+Epoch 88, training: loss: 1.19151
+Epoch 88, validation: loss: 0.94213
+Epoch 89, training: loss: 1.22964
+Epoch 89, validation: loss: 0.94355
+Epoch 90, training: loss: 1.30277
+Epoch 90, validation: loss: 0.95175
+Epoch 91, training: loss: 1.23236
+Epoch 91, validation: loss: 0.96174
+Epoch 92, training: loss: 1.22092
+Epoch 92, validation: loss: 0.95600
+Epoch 93, training: loss: 1.17847
+Epoch 93, validation: loss: 0.94663
+Epoch 94, training: loss: 1.20351
+Epoch 94, validation: loss: 0.93731
+Epoch 95, training: loss: 1.24434
+Epoch 95, validation: loss: 0.93609
+Epoch 96, training: loss: 1.22654
+Epoch 96, validation: loss: 0.93945
+Epoch 97, training: loss: 1.20245
+Epoch 97, validation: loss: 0.94335
+Epoch 98, training: loss: 1.23664
+Epoch 98, validation: loss: 0.94741
+Epoch 99, training: loss: 1.18946
+Epoch 99, validation: loss: 0.94577
+Epoch 100, training: loss: 1.25363
+Epoch 100, validation: loss: 0.93896
+Epoch 101, training: loss: 1.16202
+Epoch 101, validation: loss: 0.93905
+Epoch 102, training: loss: 1.16701
+Epoch 102, validation: loss: 0.94028
+Epoch 103, training: loss: 1.22636
+Epoch 103, validation: loss: 0.94930
+Epoch 104, training: loss: 1.22356
+Epoch 104, validation: loss: 0.95427
+Epoch 105, training: loss: 1.17250
+Epoch 105, validation: loss: 0.94949
+Epoch 106, training: loss: 1.12015
+Epoch 106, validation: loss: 0.94137
+Epoch 107, training: loss: 1.22066
+Epoch 107, validation: loss: 0.93735
+Epoch 108, training: loss: 1.16575
+Epoch 108, validation: loss: 0.93652
+Epoch 109, training: loss: 1.20321
+Epoch 109, validation: loss: 0.93980
+Epoch 110, training: loss: 1.19250
+Epoch 110, validation: loss: 0.93954
+Epoch 111, training: loss: 1.24705
+Epoch 111, validation: loss: 0.93693
+Epoch 112, training: loss: 1.21453
+Epoch 112, validation: loss: 0.93548
+Epoch 113, training: loss: 1.21410
+Epoch 113, validation: loss: 0.93616
+Epoch 114, training: loss: 1.23060
+Epoch 114, validation: loss: 0.93778
+Epoch 115, training: loss: 1.18683
+Epoch 115, validation: loss: 0.93759
+Epoch 116, training: loss: 1.24073
+Epoch 116, validation: loss: 0.93725
+Epoch 117, training: loss: 1.24032
+Epoch 117, validation: loss: 0.93909
+Epoch 118, training: loss: 1.16731
+Epoch 118, validation: loss: 0.93846
+Epoch 119, training: loss: 1.23012
+Epoch 119, validation: loss: 0.93997
+Epoch 120, training: loss: 1.17828
+Epoch 120, validation: loss: 0.94007
+Epoch 121, training: loss: 1.26980
+Epoch 121, validation: loss: 0.93819
+Epoch 122, training: loss: 1.21599
+Epoch 122, validation: loss: 0.93995
+Epoch 123, training: loss: 1.26270
+Epoch 123, validation: loss: 0.94031
+Epoch 124, training: loss: 1.17990
+Epoch 124, validation: loss: 0.93612
+Epoch 125, training: loss: 1.31866
+Epoch 125, validation: loss: 0.93853
+Epoch 126, training: loss: 1.18493
+Epoch 126, validation: loss: 0.93975
+Epoch 127, training: loss: 1.20482
+Epoch 127, validation: loss: 0.93804
+Epoch 128, training: loss: 1.22491
+Epoch 128, validation: loss: 0.93994
+Epoch 129, training: loss: 1.22792
+Epoch 129, validation: loss: 0.94045
+Epoch 130, training: loss: 1.24698
+Epoch 130, validation: loss: 0.93924
+Epoch 131, training: loss: 1.26355
+Epoch 131, validation: loss: 0.93627
+Epoch 132, training: loss: 1.21453
+Epoch 132, validation: loss: 0.93856
+Epoch 133, training: loss: 1.15200
+Epoch 133, validation: loss: 0.93986
+Epoch 134, training: loss: 1.14138
+Epoch 134, validation: loss: 0.93721
+Epoch 135, training: loss: 1.18930
+Epoch 135, validation: loss: 0.93568
+Epoch 136, training: loss: 1.15460
+Epoch 136, validation: loss: 0.93644
+Epoch 137, training: loss: 1.21920
+Epoch 137, validation: loss: 0.93488
+Epoch 138, training: loss: 1.16804
+Epoch 138, validation: loss: 0.93319
+Epoch 139, training: loss: 1.22066
+Epoch 139, validation: loss: 0.93612
+Epoch 140, training: loss: 1.10949
+Epoch 140, validation: loss: 0.93601
+Epoch 141, training: loss: 1.19044
+Epoch 141, validation: loss: 0.93507
+Epoch 142, training: loss: 1.14743
+Epoch 142, validation: loss: 0.93322
+Epoch 143, training: loss: 1.20269
+Epoch 143, validation: loss: 0.93829
+Epoch 144, training: loss: 1.16052
+Epoch 144, validation: loss: 0.93843
+Epoch 145, training: loss: 1.25935
+Epoch 145, validation: loss: 0.93793
+Epoch 146, training: loss: 1.14611
+Epoch 146, validation: loss: 0.93971
+Epoch 147, training: loss: 1.24872
+Epoch 147, validation: loss: 0.93805
+Epoch 148, training: loss: 1.24526
+Epoch 148, validation: loss: 0.94327
+Epoch 149, training: loss: 1.18079
+Epoch 149, validation: loss: 0.94758
+Epoch 150, training: loss: 1.20083
+Epoch 150, validation: loss: 0.94214
+Epoch 151, training: loss: 1.16810
+Epoch 151, validation: loss: 0.93488
+Epoch 152, training: loss: 1.18351
+Epoch 152, validation: loss: 0.93273
+Epoch 153, training: loss: 1.17748
+Epoch 153, validation: loss: 0.93586
+Epoch 154, training: loss: 1.19861
+Epoch 154, validation: loss: 0.93625
+Epoch 155, training: loss: 1.16356
+Epoch 155, validation: loss: 0.93350
+Epoch 156, training: loss: 1.17183
+Epoch 156, validation: loss: 0.93447
+Epoch 157, training: loss: 1.18654
+Epoch 157, validation: loss: 0.94096
+Epoch 158, training: loss: 1.14999
+Epoch 158, validation: loss: 0.94038
+Epoch 159, training: loss: 1.21620
+Epoch 159, validation: loss: 0.93693
+Epoch 160, training: loss: 1.14610
+Epoch 160, validation: loss: 0.93618
+Epoch 161, training: loss: 1.20059
+Epoch 161, validation: loss: 0.93729
+Epoch 162, training: loss: 1.23428
+Epoch 162, validation: loss: 0.93737
+Epoch 163, training: loss: 1.14804
+Epoch 163, validation: loss: 0.93572
+Epoch 164, training: loss: 1.13412
+Epoch 164, validation: loss: 0.93725
+Epoch 165, training: loss: 1.15533
+Epoch 165, validation: loss: 0.93407
+Epoch 166, training: loss: 1.18581
+Epoch 166, validation: loss: 0.93192
+Epoch 167, training: loss: 1.20765
+Epoch 167, validation: loss: 0.93059
+Epoch 168, training: loss: 1.19057
+Epoch 168, validation: loss: 0.93194
+Epoch 169, training: loss: 1.18761
+Epoch 169, validation: loss: 0.93517
+Epoch 170, training: loss: 1.13716
+Epoch 170, validation: loss: 0.93477
+Epoch 171, training: loss: 1.16783
+Epoch 171, validation: loss: 0.93351
+Epoch 172, training: loss: 1.14926
+Epoch 172, validation: loss: 0.93841
+Epoch 173, training: loss: 1.20953
+Epoch 173, validation: loss: 0.93660
+Epoch 174, training: loss: 1.22899
+Epoch 174, validation: loss: 0.93491
+Epoch 175, training: loss: 1.16693
+Epoch 175, validation: loss: 0.94178
+Epoch 176, training: loss: 1.18226
+Epoch 176, validation: loss: 0.94189
+Epoch 177, training: loss: 1.13424
+Epoch 177, validation: loss: 0.93809
+Epoch 178, training: loss: 1.11020
+Epoch 178, validation: loss: 0.93306
+Epoch 179, training: loss: 1.21239
+Epoch 179, validation: loss: 0.93518
+Epoch 180, training: loss: 1.18026
+Epoch 180, validation: loss: 0.93684
+Epoch 181, training: loss: 1.20402
+Epoch 181, validation: loss: 0.94190
+Epoch 182, training: loss: 1.19096
+Epoch 182, validation: loss: 0.94289
+Epoch 183, training: loss: 1.16677
+Epoch 183, validation: loss: 0.93952
+Epoch 184, training: loss: 1.24679
+Epoch 184, validation: loss: 0.94291
+Epoch 185, training: loss: 1.13627
+Epoch 185, validation: loss: 0.94150
+Epoch 186, training: loss: 1.17589
+Epoch 186, validation: loss: 0.93736
+Epoch 187, training: loss: 1.17120
+Epoch 187, validation: loss: 0.93686
+Epoch 188, training: loss: 1.21449
+Epoch 188, validation: loss: 0.93533
+Epoch 189, training: loss: 1.18133
+Epoch 189, validation: loss: 0.93450
+Epoch 190, training: loss: 1.29188
+Epoch 190, validation: loss: 0.93422
+Epoch 191, training: loss: 1.16900
+Epoch 191, validation: loss: 0.93479
+Epoch 192, training: loss: 1.24751
+Epoch 192, validation: loss: 0.93553
+Epoch 193, training: loss: 1.15180
+Epoch 193, validation: loss: 0.93673
+Epoch 194, training: loss: 1.20447
+Epoch 194, validation: loss: 0.94037
+Epoch 195, training: loss: 1.14815
+Epoch 195, validation: loss: 0.93880
+Epoch 196, training: loss: 1.16257
+Epoch 196, validation: loss: 0.94077
+Epoch 197, training: loss: 1.23354
+Epoch 197, validation: loss: 0.94106
+Epoch 198, training: loss: 1.23080
+Epoch 198, validation: loss: 0.93942
+Epoch 199, training: loss: 1.11779
+Epoch 199, validation: loss: 0.93523
+Epoch 200, training: loss: 1.11026
+Epoch 200, validation: loss: 0.93132</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Convert losses to a data frame for visualization</span></span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a>loss_data <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">Epoch =</span> <span class="fu">rep</span>(<span class="dv">1</span><span class="sc">:</span>num_epochs, <span class="dv">2</span>),</span>
+<span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">Loss =</span> <span class="fu">c</span>(train_losses, valid_losses),</span>
+<span id="cb40-5"><a href="#cb40-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">Type =</span> <span class="fu">rep</span>(<span class="fu">c</span>(<span class="st">"Training"</span>, <span class="st">"Validation"</span>), <span class="at">each =</span> num_epochs)</span>
+<span id="cb40-6"><a href="#cb40-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb40-7"><a href="#cb40-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb40-8"><a href="#cb40-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot using ggplot2</span></span>
+<span id="cb40-9"><a href="#cb40-9" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(loss_data, <span class="fu">aes</span>(<span class="at">x =</span> Epoch, <span class="at">y =</span> Loss, <span class="at">color =</span> Type)) <span class="sc">+</span></span>
+<span id="cb40-10"><a href="#cb40-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>() <span class="sc">+</span></span>
+<span id="cb40-11"><a href="#cb40-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Training and Validation Loss by Epoch"</span>,</span>
+<span id="cb40-12"><a href="#cb40-12" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"Epoch"</span>,</span>
+<span id="cb40-13"><a href="#cb40-13" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="st">"Loss"</span>) <span class="sc">+</span></span>
+<span id="cb40-14"><a href="#cb40-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Week-9---Neural-Networks-with-torch_files/figure-html/unnamed-chunk-23-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    // For code content inside modals, clipBoardJS needs to be initialized with a container option
+    // TODO: Check when it could be a function (https://github.com/zenorocha/clipboard.js/issues/860)
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

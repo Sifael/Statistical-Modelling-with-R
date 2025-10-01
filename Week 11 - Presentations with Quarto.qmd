@@ -1,0 +1,226 @@
+---
+title: "Week 11 - Presentations and Reports with Quarto"
+editor: source
+date: "2024-11-29"
+format:
+  revealjs:
+    theme: theme.scss
+    transition: fade
+    slide-number: true
+    chalkboard: true
+    background-transition: fade
+    height: 900
+    width: 1600
+    fontcolor: "#262d36"
+    highlight-style: a11y-dark
+    multiplex: true
+    footer: "Constructor University, Fall 2024"
+    code-link: true
+execute:
+  freeze: auto
+  echo: true
+  warning: true
+editor_options: 
+  chunk_output_type: console
+---
+
+## K-Nearest Neighbors (KNN) Classifier
+
+<br>
+
+::: incremental
+1.  **Data Preparation**: Loading and basic visualization
+2.  **Model Definition**: Define the kNN model with the necessary and appropriate parameters
+3.  **Training and Evaluation**: Train the model using training data and evaluate the performance
+4.  **Prediction**: Make predictions on the test data and view the results.
+::: 
+
+## KNN Dataset - Diabetes
+
+<br>
+This section loads the necessary packages for our analysis.
+
+```{r}
+suppressPackageStartupMessages(library(mclust))
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(tidymodels))
+library(ggthemes)
+library(patchwork)
+```
+
+<br>
+
+. . .
+
+```{r}
+data(diabetes, package = "mclust")
+
+diabetes <- as_tibble(diabetes)
+head(diabetes, n = 2)
+```
+
+
+## Visualizing the Dataset
+
+<br>
+
+Let's now visualize the dataset.
+
+```{r}
+#| fig-align: center
+ggplot(diabetes, aes(x = glucose, y = insulin, col = class)) +
+  geom_point() +
+  ggtitle("Distribution of Glucose to Insulin by Class") +
+  labs(x = "Glucose", y = "insulin") + theme_classic()
+```
+
+
+## Using tabset panels for visualization
+
+<br>
+
+We can also have three plots in a tabset panel
+
+:::panel-tabset
+
+### Glucose to Insulin
+
+```{r}
+#| fig-align: center
+ggplot(diabetes, aes(x = glucose, y = insulin, col = class)) +
+  geom_point() +
+  ggtitle("Distribution of Glucose to Insulin by Class") +
+  labs(x = "Glucose", y = "insulin") + theme_classic()
+```
+
+
+### SSPG to Insulin
+
+```{r}
+#| fig-align: center
+ggplot(diabetes, aes(x = sspg, y = insulin, col = class)) +
+  geom_point() +
+  ggtitle("Distribution of SSPG to Insuline by Class") + theme_classic()
+```
+
+
+### SSPG to Glucose
+
+```{r}
+#| fig-align: center
+ggplot(diabetes, aes(x = sspg, y = glucose, col = class)) +
+  geom_point() +
+  ggtitle("Distribution of SSPG to Glucose by Class") + theme_classic()
+```
+
+:::
+
+## Impementing KNN Classifier - train - test - split
+
+<br>
+
+The code below loads our data and splits into train and test
+
+```{r}
+# for reproducibility 
+set.seed(4522)
+data_split <- initial_split(diabetes, prop = .8)
+
+# extract training and testing data
+train_data <- training(data_split)
+test_data <- testing(data_split)
+
+dim(train_data); dim(test_data)
+```
+
+## KNN Model Configuration and Fitting
+
+<br>
+
+The code below creates a k-NN model and train the model to predict classes based on k=3
+
+```{r}
+# specifying the knn model
+knn_spec <- nearest_neighbor( neighbors = 3 ) %>%
+              set_mode("classification") %>%
+              set_engine("kknn")
+
+# fitting the model
+knn_fit <- knn_spec %>%
+              fit(class ~ ., data = train_data )
+``` 
+
+## KNN Model Fit - Object
+
+<br>
+
+Providing details of the model fit object
+```{r}
+# showing the model fit
+knn_fit
+```
+
+
+## KNN Model Results - confusion matrix
+
+<br>
+
+Below we will visualize the confusion matrix
+
+```{r}
+augment( knn_fit, new_data = train_data) %>%
+         conf_mat(truth = class, estimate = .pred_class) 
+```
+
+
+## KNN Model Results - confusion matrix - visual
+
+<br>
+
+```{r}
+#| fig-align: center
+augment( knn_fit, new_data = train_data) %>%
+         conf_mat(truth = class, estimate = .pred_class) %>%
+         autoplot( type = 'heatmap') +
+         labs(title = "Confusion Matrix - Train Data")
+```
+
+## Additional Metrics
+
+
+A simple way to add more metrics
+
+```{r}
+augment( knn_fit, new_data = test_data ) %>% 
+    summarise(
+               accuracy = mean( .pred_class == class),
+               sensitivity = sens_vec(truth = class, estimate = .pred_class),
+               specificity = spec_vec(truth = class, estimate = .pred_class),
+               precision = precision_vec(truth = class, estimate = .pred_class),
+               recall = recall_vec(truth = class, estimate = .pred_class),
+               f1 = f_meas_vec(truth = class, estimate = .pred_class)
+)
+```
+
+
+## Uploading Images
+
+<br>
+
+You can also upload images from your local file
+```r
+![image_source](image_file_path){ image class styling}
+```
+<br>
+
+. . . 
+
+For example:
+```r
+![KKN-Classifier](images/machine_learning.jpg){.nostretch fig-align="center" width=80%}
+```
+
+![KKN-Classifier](images/machine_learning.jpg){.nostretch fig-align="center" width=80%}
+
+
+## That's the end {.center} 
