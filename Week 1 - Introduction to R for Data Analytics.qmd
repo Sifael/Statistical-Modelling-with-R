@@ -1,0 +1,435 @@
+---
+title: "Week 1 - R for Data Analytics"
+format: html
+editor: visual
+---
+
+## Constructor University - Data Analytics Fall 2024
+
+#### Week 1 - Lab Session
+
+This lab serves as an introduction to R for the Data Analytics course at Constructor University during the Fall 2024 semester. Its purpose is to familiarize students with R as a programming language for data science and analytics, complementing the theoretical discussions covered in class.
+
+The lab will emphasize the practical application of the theoretical concepts discussed in lectures. While we will cover key aspects of the R programming language, our primary focus will be on the specific tools and techniques that will enable you to effectively understand and complete the course.
+
+#### Course Textbook and Lab Philosophy
+
+R, like any programming language, evolves continuously with new tools and packages to meet the growing demands of data analytics. Our goal with these labs is to introduce you to the most essential and up-to-date tools and packages in R. By doing so, we aim to equip you with the skills and knowledge necessary to effectively utilize R for data analysis, ensuring you are well-prepared to tackle real-world data challenges both during the course and in your future career.
+
+This course will follow closely the textbook `Introduction to Statistical Learning.` The book provides implementations in both `Python` and `R`. In particular, the textbook use base `R` implementation for exercises. As noted earlier, while you will learn base R throughout the course, we will predominantly leverage packages to achieve more efficient and effective data analysis and visualization. These packages will streamline many processes and provide a more intuitive and powerful framework for handling data.
+
+#### Core Modules/Packages for the Course
+
+The course will predominantly use the following packages:
+
+**`Tidyverse`**: A collection of R packages designed for data science, making it easier to import, tidy, transform, visualize, and model data.
+
+**`ggplot2`**: Part of the Tidyverse, this package is a powerful tool for creating complex and aesthetically pleasing visualizations.
+
+**`Tidymodels`**: A suite of packages for modeling and machine learning using tidy data principles, providing a consistent and flexible framework for analysis.
+
+## The `tidyverse`
+
+The `tidyverse` package is an opinionated collection of R packages designed for data science and machine learning. It enforces good practices and discourages bad practices by providing a consistent and cohesive set of tools that work well together. The tidyverse simplifies many common data tasks, promoting clear and readable code, and making it easier to transform, visualize, and model data.
+
+Let's begin by installing and loading up a few packages.
+
+```{r}
+# if you don't have it installed
+#install.packages('tidyverse')
+
+# loading tidyverse
+library(tidyverse)
+options(tidyverse.quiet = TRUE)
+library(gt)
+```
+
+### Loading Data
+
+In most cases, the first step to analyzing data will be reading and/or loading datasets. For this example, we will use the `datasets` library which contains in-built data. We can use the function `data()` to import it.
+
+```{r}
+data(mtcars)
+```
+
+From here on, mtcars can be used as a variable that contains the data `mtcars`. In the code below, we use a simple in-built function to check whether `mtcars` is a `data.frame` object.
+
+```{r}
+is.data.frame(mtcars)
+```
+
+## Dataframe vs. Tibble
+
+There are some important difference to know about `data.frame` and `tibble` objects in R. You can read more about them but we will use a summary on this notebook:
+
+**1. Printing**: Tibbles have a more user-friendly printing method that shows only the first 10 rows and the columns that fit on the screen, avoiding overwhelming output.
+
+**2. Column Types**: Tibbles are stricter about column types and do not convert strings to factors by default, unlike data frames.
+
+**3. Subsetting**: Tibbles do not allow partial matching of column names, reducing potential errors.
+
+**4. Performance**: Tibbles are generally more modern and optimized for performance with large datasets compared to traditional data frames. :::
+
+With that in mind, we are going to be using the `tibble`. We can convert a `data.frame`object into a `tibble` object using the `as_tibble()` function.
+
+```{r}
+mtcars <- as_tibble(mtcars)
+
+# printing tibble object
+print(mtcars)
+```
+
+The object `mtcars` can be visualized with many alternatives. Since our emphasis is using tidyverse functions, we can look at a few.
+
+\
+
+**1.1. `slice_head()`**
+
+The `slice_head` function is used to select the first few rows of a data frame or tibble, making it useful for quickly viewing the beginning of a dataset or extracting a subset of rows for analysis.
+
+```{r}
+slice_head(mtcars, n = 5)
+```
+
+**1.2. `slice_tail()`**
+
+Similarly, the `slice_tail` function returns `n` number of rows from bottom of the dataset.
+
+```{r}
+slice_tail(mtcars, n = 4)
+```
+
+**1.3. `slice_sample()`**
+
+The slice_sample() function in R, is used to randomly select a specified number or proportion of rows from a data frame or tibble.
+
+```{r}
+slice_sample(mtcars, n = 5)
+```
+
+### Data Dimensions
+
+Another common task is understand the nature and dimensions of your dataset. This includes the number of columns and rows, the data types and even retrieving column headers. The following functions are useful in data dimension understanding.\
+
+**`dim()`**
+
+The `dim()` function returns the dimension of the data with the number of rows and the number of columns. In our dataset, we have 32 rows and 11 columns as seen in the output below.
+
+```{r}
+dim(mtcars)
+```
+
+**`str()`**
+
+The `str()` function returns the structure of the dataset, highlighting the **column name**, **datatype**, **total observations** and a sample of the **data points**.
+
+```{r}
+str(mtcars)
+```
+
+**`summary()`**
+
+The `summary()` function in R provides a quick overview of the key statistics for each variable in a data frame or vector. For numeric data, it returns the minimum, 1st quartile, median, mean, 3rd quartile, and maximum values. For factors, it provides the frequency of each level. This function is useful for understanding the distribution and central tendencies of your data at a glance.
+
+```{r}
+summary(mtcars)
+```
+
+**`names()`**
+
+The `names` function returns the names of the variables in your data set.
+
+```{r}
+names(mtcars)
+```
+
+#### Getting Help
+
+You may often encounter functions, objects and methods you may not understand. You can always use the format `?mtcars` to get the documentation for the object mtcars. This applies to objects and packages as well.
+
+```{r}
+?mtcars
+```
+
+## Data Wrangling with `tidyverse`
+
+We will now delve deeper into the `tidyverse` to explore data wrangling functions. We will examine several functions provided by the `tidyverse` library and how they work together. To do this, we will use the `Coffee_Sales.csv` dataset, which is available on Kaggle and included in the course materials.
+
+```{r}
+coffee_sales <- read.csv('Datasets/Coffee_Sales.csv')
+coffee_sales <- as_tibble(coffee_sales)
+
+# peeking through the data
+slice_head(coffee_sales, n = 10)
+```
+
+```{r}
+dim(coffee_sales)
+```
+
+```{r}
+names(coffee_sales)
+```
+
+### 1. The `select` function.
+
+We now introduce the `select` function, which returns specified columns from the original dataset. In this example, we wish to retain the columns: `date`, `cash_type`, `money`, and `coffee_name`.
+
+```{r}
+coffee_sales %>% 
+        select(date, cash_type, money, coffee_name) %>%
+        slice_sample(n = 10)
+```
+
+As noted above, `slice_sample` returns a sample of 10 observations from the subset of columns specified using the `select` function. An important and interesting idea here is the use of `%>%`, also known as the pipe operator.
+
+### 2. Pipe Operator (`%>%`)
+
+The pipe operator (`%>%`) allows for the chaining of multiple functions in a readable and concise manner. It passes the output of one function directly into the next function as an argument, enabling a smooth flow of data manipulation steps without the need for nested function calls, as in our example above.
+
+Sometimes when using the select method, we wish to perform a negative selection. That is remove columns instead of picking the columns to stay. We can achieve this with the following method.
+
+```{r}
+coffee_sales %>% select( -c(datetime, card)) %>% slice_sample(n = 10)
+```
+
+### 3. The `renaming` function
+
+Renaming columns/variables can make your data analysis easier and smoother as variables reflect their true meaning. In our example, we can now rename the columns in the following order:
+
+`cash_type` --\> `payment_type`
+
+`money` --\> `price`
+
+`coffee_name` --\> `drink_name`
+
+You can choose whichever names work for you.
+
+```{r}
+coffee_sales %>% 
+        select(-c(datetime, card)) %>% # negative selection of columns - eliminate
+        rename( payment_type = cash_type, price = money, drink_name = coffee_name) %>% # changing column names
+        slice_head(n = 10) # see the top 10 values
+```
+
+Before we move on to the filter function, a useful operation to know is how to return a unique set of values from a column.
+
+### 4. The `distinct` function.
+
+The distinct function is used to remove duplicate rows from a data frame or tibble. It helps in ensuring that the data contains only unique combinations of the specified columns. In our example, we want to know that distinct values exist for a specific column or set of columns.
+
+```{r}
+
+coffee_sales %>% 
+        select(-c(datetime, card)) %>%
+        rename( payment_type = cash_type, price = money, drink_name = coffee_name) %>%
+        distinct(drink_name)
+```
+
+### 5. The `filter` Function
+
+The `filter` function sub-selects the data based on logical and mathematical comparison. This means that we can filter for observations of a specific name or value.
+
+Below, we sub-select observations whose purchases are above 30 with cash for a specific set of drinks.
+
+```{r}
+coffee_sales %>% 
+        select(-c(datetime, card)) %>%
+        rename( payment_type = cash_type, price = money, drink_name = coffee_name) %>%
+        # using multiple filter selection
+        filter( price >= 30, payment_type == 'cash', drink_name %in% c('Americano'))
+```
+
+Now we see that we have a subset of cash payments for a specific coffee drink.
+
+### 6. The `mutate` function
+
+Often times, you may need to create a new variable based on transformations or calculations involving existing columns, enabling more complex data analysis and manipulation within your dataset. The `mutate` functions allows us to create new columns/variables.
+
+In the example below, we will create a new variable that assigns value `cocoa` to a  related drink or `coffee`otherwise. Specifically, it will check if a drink name has  of  in it and assign it to `cocoa` and `coffee` otherwise
+
+```{r}
+coffee_sales %>% 
+        # negative selection of columns - eliminate
+        select(-c(datetime, card)) %>%
+        # renaming column/variable names
+        rename( payment_type = cash_type, price = money, drink_name = coffee_name) %>%
+        # using multiple filter selection
+        # filter( price >= 30, payment_type == 'cash', drink_name %in% c('Americano')) %>%
+        # creating a new column 
+        mutate( drink_type =  ifelse(str_detect(drink_name, regex("chocolate|cocoa", ignore_case = TRUE)), "cocoa",  "coffee") ) %>%
+        # show the first ten values
+        slice_head( n = 10 )
+```
+
+The above mutate function is a slightly more complicated than we have seen, however, it simply checks whether the column value has the words `chocolate` and/or `cocoa` or not and assigns the outcome respectively.
+
+\
+
+### 7. The `group_by` function
+
+The next useful function is `group_by`, which allows us to summarize observational groups. The example below groups the data by the newly created column `drink_type`.
+
+```{r}
+coffee_sales %>% 
+        # negative selection of columns - eliminate
+        select(-c(datetime, card)) %>%
+        # renaming column/variable names
+        rename( payment_type = cash_type, price = money, drink_name = coffee_name) %>%
+        # using multiple filter selection
+        # filter( price >= 30, payment_type == 'cash', drink_name %in% c('Americano')) %>%
+        # creating a new column 
+        mutate( drink_type =  ifelse(str_detect(drink_name, regex("chocolate|cocoa", ignore_case = TRUE)), "cocoa",  "coffee") ) %>%
+        # implementing a groupby and showing the sample data.
+        group_by( drink_type ) %>% glimpse() %>% gt()
+```
+
+### 8. The `arrange` function
+
+Finally, we look at the `arrange` function, which is used to sort the tibble object based on columns. This function allows you to order your data in ascending or descending order, making it easier to analyze and interpret specific trends or patterns.Finally, we look at the `arrange` function which is used to sort the tibble object based on columns.
+
+In the example, below we sort the results of the previous `group_by` and `summarise` function by sorting the outcome based on `avg_price` and `drink_name`. Try and determine what this function does: `arrange( avg_price, desc(drink_name) )`
+
+```{r}
+coffee_sales %>% 
+    # renaming the columns
+    rename( payment_type = cash_type, price = money, drink_name = coffee_name) %>%
+    # groupby data by drink_name
+    group_by( drink_name ) %>%
+    # summarise data by computing metrics
+    summarise( avg_price = mean(price), min_price = mean(price), max_price = max(price) ) %>%
+    # sort variables by avg_price ascending, drink_name descending
+    arrange( avg_price, desc(drink_name) )
+```
+
+We have explored several functions within the `tidyverse` library, though there are many more to cover. As the course progresses, we will introduce additional functions to enhance your data manipulation skills. You are also encouraged to explore and experiment with these functions on your own. In the next section, we will delve into data visualization.
+
+## Visualization with ggplot2
+
+In this section, we introduce the visualization library `ggplot2`, which we will use extensively throughout this course. Starting with `ggplot2` aligns with our goal of equipping you with the tools commonly used in modern data science for analysis and modeling. Consequently, we will focus on `ggplot2` rather than R's base plotting capabilities. Additionally, we will integrate it with the `tidyverse` to demonstrate how these tools complement each other.
+
+If this is your first time using `ggplot2`, you can install it with the command `install.packages('ggplot2')`. I will also recommend libraries that improve on the base them of ggplot such as `ggthemr`
+
+Now, let's begin with an example. The code below applies a combination of processing we have seen above into a final dataframe we can use readily for visualization.
+
+```{r}
+# installing ggplot2
+#install.packages('ggplot2')
+library(ggplot2)
+
+coffee_sales <- read.csv('Datasets/Coffee_Sales.csv')
+coffee_sales <- as_tibble(coffee_sales)
+
+coffee_sales <- coffee_sales %>% 
+                # negative selection of columns - eliminate
+                select(-c(datetime, card)) %>%
+                # renaming the columns
+                rename( payment_type = cash_type, price = money, drink_name = coffee_name) %>%
+                # creating a new column
+                mutate( drink_type =  ifelse(str_detect(drink_name, regex("chocolate|cocoa", ignore_case = TRUE)), "cocoa",  "coffee") )
+```
+
+```{r}
+slice_head(coffee_sales, n = 5)
+```
+
+### Example Plot 1: Bar Plot
+
+In the example below, we generate a simple bar plot that compares the sum of sales between `cocoa` drinks and `coffee` drinks. As you can see below, the ggplot object has a few main structures:
+
+**Data**: The dataset you want to visualize. This is part of the `ggplot` initial definition. <br> **Aesthetics (aes)**: Mappings that describe how data variables are mapped to visual properties (axes, colors, sizes). <br> **Geometries (geom):** The visual representation of data points (e.g., points, lines, bars). <br> **Themes:** Customize the non-data components of the plot (e.g., background, grid lines).
+
+```{r}
+options(repr.plot.width = 10, repr.plot.height = 8)
+
+coffee_sales %>% 
+       # group data together by drink_type
+       group_by(drink_type) %>% 
+       # sum the price by drink type
+       summarise(sales = sum(price))  %>%
+
+       # implementing ggplot2
+       ggplot( aes(x = drink_type, y = sales, fill = drink_type) ) + 
+                geom_bar( stat = "identity") + 
+                ggtitle( "Comparison of Sales for Coffee and Cocoa Drinks " ) +
+                theme_minimal()
+```
+
+#### Example Plot 2: Bar Plot Sales by Drink
+
+Visualizing the total sales by the `drink_name`
+
+```{r}
+coffee_sales %>% 
+       # group data together by drink_type
+       group_by(drink_name) %>% 
+       # sum the price by drink type
+       summarise(sales = sum(price))  %>%
+       # sort by total sales
+       arrange(desc(sales)) %>%
+
+       # implementing ggplot2
+       ggplot(. ,aes(x = drink_name, y = sales, fill = drink_name) ) + 
+                geom_bar( stat = "summary", fun = "sum" ) + 
+                ggtitle( "Comparison of Sales for Coffee and Cocoa Drinks " ) +
+                theme_minimal()
+```
+
+### Example Plot 3: Adding a theme.
+
+Here is an example of adding external themes to your plots.
+
+```{r}
+# loading the ggthemr package
+library(ggthemr)
+
+# setting the dust theme
+ggthemr('dust')
+
+coffee_sales %>% 
+       # group data together by drink_type
+       group_by(drink_name) %>% 
+       # sum the price by drink type
+       summarise(sales = sum(price))  %>%
+       # sort by total sales
+       arrange(desc(sales)) %>%
+
+       # implementing ggplot2
+       ggplot(. ,aes(x = drink_name, y = sales) ) + 
+                geom_bar( stat = "summary", fun = "sum" ) + 
+                ggtitle( "Comparison of Sales by Drink Name" )
+```
+
+#### Example Plot 4: Box Plots
+
+The next example demonstrates building box plots to visualize the distributions of data by drink_type.
+
+```{r}
+# implementing ggplot2
+ggplot( data = coffee_sales, 
+        aes(x = drink_type, y = price, fill=drink_type) ) + 
+        geom_boxplot() + 
+        ggtitle( "Box Plot Distriubutions for Coffee and Cocoa Drinks " )
+```
+
+### Example Plot 5: Time Series Plot
+
+Finally, we generate a time series plot for daily sales.
+
+```{r}
+coffee_sales %>% 
+       # Convert string dates into date 
+       mutate(date = as.Date(date)) %>%
+       # group data together by date
+       group_by(date) %>% 
+       # sum the price by date
+       summarise(sales = sum(price))  %>%
+
+       # implementing ggplot2
+       ggplot(., aes(x = date, y = sales) ) +
+                 geom_point() +
+                 geom_line( linewidth=.7 ) +
+                 ggtitle( "Time Series Plot for Daily Sales" )
+```
+
+This concludes our introduction to the Data Analytics Lab to prepare you to execute assignments and follow along with the material discussed in class.
